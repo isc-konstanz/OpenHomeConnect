@@ -1,0 +1,163 @@
+/* 
+ * Copyright 2016-20 ISC Konstanz
+ * 
+ * This file is part of OpenSkeleton.
+ * For more information visit https://github.com/isc-konstanz/OpenSkeleton
+ * 
+ * OpenSkeleton is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * OpenSkeleton is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with OpenSkeleton.  If not, see <http://www.gnu.org/licenses/>.
+ */
+buildscript {
+  repositories {
+    maven {
+      url 'https://plugins.gradle.org/m2/'
+    }
+  }
+  dependencies {
+    classpath 'biz.aQute.bnd:biz.aQute.bnd.gradle:4.1.0'
+  }
+}
+
+apply from: 'projects.gradle'
+
+def javaProjects() {
+  return allprojects.findAll { new File(it.projectDir, 'src').exists() }
+}
+
+configure(javaProjects()) {
+  apply plugin: 'maven-publish'
+  apply plugin: 'java-library'
+  apply plugin: 'biz.aQute.bnd.builder'
+  apply plugin: 'eclipse'
+
+  group = projectGroup
+
+  version = projectVersion
+
+  repositories {
+    mavenCentral()
+    mavenLocal()
+  }
+
+  dependencies {
+    testImplementation group: 'junit', name: 'junit', version: '4.12'
+  }
+
+  jar {
+    manifest {
+      archiveVersion = project.version.replace('-','.');
+      attributes('Bundle-Vendor':      projectVendor,
+                 'Bundle-DocURL':      projectSite)
+    }
+  }
+
+  if (!project.properties.containsKey('javaVersion')) {
+    project.ext {
+      javaVersion = '1.8'
+    }
+  }
+
+  sourceCompatibility = javaVersion
+  targetCompatibility = javaVersion
+
+  task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+  }
+
+  task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+  }
+
+  task jarAll(type: Copy) {
+    // Include the jar file created, as well as all artifacts:
+    from jar
+    from sourcesJar
+    from javadocJar
+
+    if (copyDependencies) {
+      // Includes all the dependencies:
+      from configurations.default
+    }
+    into rootDir.getPath() + '/build/libs'
+  }
+
+  build.dependsOn { jarAll }
+
+  eclipse.pathVariables([GRADLE_USER_HOME:file(gradle.gradleUserHomeDir)])
+  tasks.eclipse.dependsOn(cleanEclipse)
+
+  artifacts {
+    archives sourcesJar
+    archives javadocJar
+  }
+
+  javadoc {
+    exclude '**/internal/**'
+    exclude '**/java-gen/**'
+    exclude '**/app/**'
+  }
+}
+
+task javadocClean(type: Delete) {
+  delete rootDir.getPath() + '/docs/javadoc'
+}
+
+task javadocAll(type: Javadoc) {
+  dependsOn(javadocClean)
+  source javadocProjects.collect {
+    project -> project.sourceSets.main.allJava
+  }
+  exclude '**/internal/**'
+  exclude '**/java-gen/**'
+  exclude '**/app/**'
+
+  destinationDir = new File(rootDir, 'docs/javadoc')
+
+  classpath = files(javadocProjects.collect { project ->
+    project.sourceSets.main.compileClasspath })
+
+  classpath += files(javadocProjects.collect { project ->
+    project.sourceSets.main.output })
+}
+
+task distribute(type: Tar) {
+  dependsOn(distributionProjects.build)
+  dependsOn(javadocAll)
+
+  compression = Compression.GZIP
+  archiveFileName = project.name + '-' + projectVersion + '.tar.gz'
+
+  into(project.name) {
+    from('build') {
+      include 'libs/*' + projectVersion + '*.jar'
+    }
+    from('./') {
+      include 'LICENSE**'
+      include 'NOTICE**'
+      include 'conf/**'
+      include 'libs/**'
+      include 'licenses/**'
+    }
+    into('licenses') {
+      for (Project distributionProject: distributionProjects) {
+        from (distributionProject.getProjectDir().toString() + '/libs') {
+          exclude '**/*.jar'
+          exclude '**.jar'
+        }
+      }
+    }
+  }
+  destinationDirectory = file('build/dist/')
+}

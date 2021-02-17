@@ -1,0 +1,68 @@
+/* 
+ * Copyright 2016-20 ISC Konstanz
+ * 
+ * This file is part of OpenHomeConnect.
+ * For more information visit https://github.com/isc-konstanz/OpenHomeConnect
+ * 
+ * OpenHomeConnect is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * OpenHomeConnect is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with OpenHomeConnect.  If not, see <http://www.gnu.org/licenses/>.
+ */
+archivesBaseName = 'openmuc-driver-homeconnect'
+def projectFullName = 'OpenMUC Driver - HomeConnect'
+def projectDescription = 'HomeConnect driver for the OpenMUC framework.'
+
+configurations.create('embed')
+
+dependencies {
+  implementation fileTree(dir: 'libs/openmuc', include: ['*.jar'])
+  implementation group: 'org.osgi', name: 'osgi.core', version: '7.0.0'
+  implementation group: 'org.osgi', name: 'org.osgi.service.component.annotations', version: '1.4.0'
+  implementation group: 'org.apache.felix', name: 'org.apache.felix.scr', version: '2.1.14'
+  
+
+  implementation project(':api')
+  embed          project(':api')
+}
+
+def embed = configurations.embed.findAll {
+  !it.getName().matches("(slf4j|gson|guava).*")
+}
+
+jar {
+  into('libs') {
+    from embed
+  }
+  manifest {
+    attributes('Bundle-Name':        projectFullName,
+               'Bundle-Description': projectDescription,
+               'Bundle-ClassPath': '.,' + embed.collect { 'libs/'+it.getName() }.join(','),
+               'Import-Package':   '!com.homeconnect.*,' +
+                                   '!org.apache.log.*,' +
+                                   '!org.apache.log4j.*,' +
+                                   '!org.apache.avalon.framework.logger.*,' +
+                                   '!okhttp3.internal.annotations.*,' +
+                                   '!org.openjsse.javax.net.ssl.*,' +
+                                   '!org.openjsse.net.ssl.*,' +
+                                   '!org.bouncycastle.jsse.*,' +
+                                   '!org.conscrypt.*,' +
+                                   '!android.*,' +
+                                   '*;version=0',
+               'Export-Package':   '')
+  }
+}
+
+eclipse {
+  project {
+    name = archivesBaseName
+  }
+}
