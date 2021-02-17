@@ -97,7 +97,7 @@ public class HomeConnectApiClient {
     private final Map<String, List<AvailableProgramOption>> availableProgramOptionsCache;
 
     public HomeConnectApiClient(String apiUrl, String username) throws AuthorizationException {
-    	this(apiUrl, OAuthAuthorization.getCredentials(username), null);
+        this(apiUrl, OAuthAuthorization.getCredentials(username), null);
     }
 
     public HomeConnectApiClient(String apiUrl, Credential credential,
@@ -621,22 +621,22 @@ public class HomeConnectApiClient {
         return communicationQueue;
     }
 
-    public Data getSetting(String haId, String setting)
+    private Data getSetting(String haId, String setting)
             throws HomeConnectException {
         return getData(haId, "/api/homeappliances/" + haId + "/settings/" + setting);
     }
 
-    public void putSettings(String haId, Data data)
+    private void putSettings(String haId, Data data)
             throws HomeConnectException {
         putSettings(haId, data, VALUE_TYPE_STRING);
     }
 
-    public void putSettings(String haId, Data data, int valueType)
+    private void putSettings(String haId, Data data, int valueType)
             throws HomeConnectException {
         putData(haId, "/api/homeappliances/" + haId + "/settings/" + data.getName(), data, valueType);
     }
 
-    public Data getStatus(String haId, String status)
+    private Data getStatus(String haId, String status)
             throws HomeConnectException {
         return getData(haId, "/api/homeappliances/" + haId + "/status/" + status);
     }

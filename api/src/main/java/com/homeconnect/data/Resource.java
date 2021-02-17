@@ -16,17 +16,17 @@ import org.eclipse.jdt.annotation.Nullable;
 
 public enum Resource {
 
-	FREEZER_TEMPERATURE_SETPOINT(Type.SETTINGS, Constants.SETTINGS_FREEZER_SETPOINT_TEMPERATURE),
-	FRIDGE_TEMPERATURE_SETPOINT(Type.SETTINGS, Constants.SETTINGS_FRIDGE_SETPOINT_TEMPERATURE),
-	FREEZER_SUPER_MODE(Type.SETTINGS, Constants.SETTINGS_FREEZER_SUPER_MODE),
-	FRIDGE_SUPER_MODE(Type.SETTINGS, Constants.SETTINGS_FRIDGE_SUPER_MODE);
+    FREEZER_TEMPERATURE_SETPOINT(Type.SETTINGS, Constants.SETTINGS_FREEZER_SETPOINT_TEMPERATURE),
+    FRIDGE_TEMPERATURE_SETPOINT(Type.SETTINGS, Constants.SETTINGS_FRIDGE_SETPOINT_TEMPERATURE),
+    FREEZER_SUPER_MODE(Type.SETTINGS, Constants.SETTINGS_FREEZER_SUPER_MODE),
+    FRIDGE_SUPER_MODE(Type.SETTINGS, Constants.SETTINGS_FRIDGE_SUPER_MODE);
 
-	public static enum Type {
-		SETTINGS,
-		STATUS;
-	}
+    public static enum Type {
+        SETTINGS,
+        STATUS;
+    }
 
-	private final Type type;
+    private final Type type;
     private final String key;
 
     private Resource(Type type, String key) {

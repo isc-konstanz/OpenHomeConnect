@@ -62,12 +62,12 @@ public class HomeConnectEventSourceClient {
 
     public HomeConnectEventSourceClient(String apiUrl, String username,
             ScheduledExecutorService scheduler) throws AuthorizationException {
-    	this(apiUrl, OAuthAuthorization.getCredentials(username), scheduler, null);
+        this(apiUrl, OAuthAuthorization.getCredentials(username), scheduler, null);
     }
 
     public HomeConnectEventSourceClient(String apiUrl, Credential credential,
             ScheduledExecutorService scheduler, @Nullable List<Event> eventHistory) {
-    	
+        
         this.apiUrl = apiUrl;
         this.credential = credential;
         this.scheduler = scheduler;

@@ -129,42 +129,48 @@ public class OAuthAuthorization implements Serializable{
     }
 
     public static Credential getCredentials(String username) throws AuthorizationException {
+        Credential credentials;
         try {
-        	FileDataStoreFactory dataStoreFactory = new FileDataStoreFactory(DATA_STORE_DIR);
-	        
-	        /** Read the stored authorization client out of file.*/
-        	OAuthSerializer serializer = new OAuthSerializer();
-	        OAuthAuthorization authorization = serializer.readObject(username);
-	        
-	        /** Set the Data_Store_Factory, because it is not serializable.*/
-	        authorization.setDataStoreFactory(dataStoreFactory);
-	        
-	        /** Get Credentials for authorization client. */
-	        return authorization.authorize();
-			
-		} catch (IOException e) {
-			throw new AuthorizationException(e);
-		}
+            FileDataStoreFactory dataStoreFactory = new FileDataStoreFactory(DATA_STORE_DIR);
+            
+            /** Read the stored authorization client out of file.*/
+            OAuthSerializer serializer = new OAuthSerializer();
+            OAuthAuthorization authorization = serializer.readObject(username);
+            
+            /** Set the Data_Store_Factory, because it is not serializable.*/
+            authorization.setDataStoreFactory(dataStoreFactory);
+            
+            /** Get Credentials for authorization client. */
+            credentials = authorization.authorize();
+            if (credentials == null) {
+            	throw new AuthorizationException("Unknown user: " + username);
+            }
+        } catch (IOException e) {
+            throw new AuthorizationException(e);
+        }
+        return credentials;
     }
 
     public static Credential createCredentials(String username, String apiKey, String apiSecret) throws AuthorizationException {
-    	try {
-        	FileDataStoreFactory dataStoreFactory = new FileDataStoreFactory(DATA_STORE_DIR);
+        Credential credentials;
+        try {
+            FileDataStoreFactory dataStoreFactory = new FileDataStoreFactory(DATA_STORE_DIR);
             
             /** User specific information given in batch file for initialization. 
                 IP and port of jetty server are hardcoded. */
-        	OAuthSerializer serializer = new OAuthSerializer();
-        	OAuthAuthorization authorization = new OAuthAuthorization(username, "127.0.0.1", 8085, apiKey, apiSecret, dataStoreFactory);
-        	
+            OAuthSerializer serializer = new OAuthSerializer();
+            OAuthAuthorization authorization = new OAuthAuthorization(username, "127.0.0.1", 8085, apiKey, apiSecret, dataStoreFactory);
+            
             /** Store authorization client in file.*/
-			serializer.writeObject(username, authorization);
-			
-	        /** Order credentials and store in file.*/
-        	return authorization.authorize();
-			
-		} catch (IOException e) {
-			throw new AuthorizationException(e);
-		}
+            serializer.writeObject(username, authorization);
+            
+            /** Order credentials and store in file.*/
+            credentials = authorization.authorize();
+            
+        } catch (IOException e) {
+            throw new AuthorizationException(e);
+        }
+        return credentials;
     }
 
     /**
@@ -175,16 +181,16 @@ public class OAuthAuthorization implements Serializable{
      * @throws HomeConnectException
      */
     public static void main(String[] args) throws HomeConnectException {
-    	String username  = args[0];
-    	String apiKey    = args[1];
-    	String apiSecret = args[2];
+        String username  = args[0];
+        String apiKey    = args[1];
+        String apiSecret = args[2];
         try {
-        	Credential credentials = createCredentials(username, apiKey, apiSecret);
-        	
-	        /**Check if authorization worked.*/
-	        if(credentials != null) {
-	            System.out.println("\n"+"User "+ username + " registered:\n");
-	        }
+            Credential credentials = createCredentials(username, apiKey, apiSecret);
+            
+            /**Check if authorization worked.*/
+            if (credentials != null) {
+                System.out.println("\n"+"User "+ username + " registered:\n");
+            }
             /** Print out information for user in cmd Window.*/
             System.out.println("API KEY: "      + apiKey + "\n");
             System.out.println("API SECRET: "   + apiSecret + "\n");

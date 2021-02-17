@@ -41,9 +41,9 @@ public class OAuthSerializer {
         FileOutputStream fileStream = new FileOutputStream(file);
         ObjectOutputStream objectStream = new ObjectOutputStream(fileStream);
         try {
-	        objectStream.writeObject(oauthAuthorization);
-	        objectStream.flush();
-	        
+            objectStream.writeObject(oauthAuthorization);
+            objectStream.flush();
+            
         } finally {
             objectStream.close();
             fileStream .close();

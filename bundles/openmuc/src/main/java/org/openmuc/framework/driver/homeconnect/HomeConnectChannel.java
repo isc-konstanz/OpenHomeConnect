@@ -30,7 +30,7 @@ import com.homeconnect.data.Resource;
 @AddressSyntax(separator = "@")
 public class HomeConnectChannel extends Channel {
 
-	private Resource resource;
+    private Resource resource;
 
     @Address(id = "resource",
              name = "Resource",
@@ -46,12 +46,12 @@ public class HomeConnectChannel extends Channel {
 
     @Override
     protected void onConfigure() throws ArgumentSyntaxException {
-    	try {
-        	resource = Resource.valueOf(resourceString.replace("-", "_"));
-    		
-		} catch (IllegalArgumentException e) {
-			throw new ArgumentSyntaxException("Unknown resource: " + resourceString);
-		}
+        try {
+            resource = Resource.valueOf(resourceString.replace("-", "_"));
+            
+        } catch (IllegalArgumentException e) {
+            throw new ArgumentSyntaxException("Unknown resource: " + resourceString);
+        }
     }
 
     public Resource getResource() {
