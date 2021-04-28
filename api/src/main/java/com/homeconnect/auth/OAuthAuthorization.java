@@ -1,14 +1,22 @@
-/**
- * Copyright (c) 2010-2020 Contributors to the openHAB project
+/*
+ * Copyright 2016-20 ISC Konstanz
  *
- * See the NOTICE file(s) distributed with this work for additional
- * information.
+ * This file is part of OpenHomeConnect.
+ * For more information visit https://github.com/isc-konstanz/OpenHomeConnect.
  *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0
+ * OpenHomeConnect is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * SPDX-License-Identifier: EPL-2.0
+ * OpenHomeConnect is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with OpenHomeConnect.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 package com.homeconnect.auth;
 
@@ -39,8 +47,9 @@ public class OAuthAuthorization implements Serializable{
     private static final long serialVersionUID = 1L;
 
     /** Directory to store user credentials. */
-    public static final File DATA_STORE_DIR =
-            new File(System.getProperty("user.home"), ".store/credential_storage");
+    public static final File DATA_STORE_DIR = 
+    		new File(System.getProperty(OAuthAuthorization.class.getPackage().getName().toLowerCase() + ".store",
+    				System.getProperty("user.home") + "/.store")+"/credential_storage");
 
     /**
     * Global instance of the {@link DataStoreFactory}. The best practice is to make it a single
@@ -58,12 +67,12 @@ public class OAuthAuthorization implements Serializable{
     static final JsonFactory JSON_FACTORY = new JacksonFactory();
 
     /**For simulator. */
-    private static final String TOKEN_SERVER_URL = "https://simulator.home-connect.com/security/oauth/token";
-    private static final String AUTHORIZATION_SERVER_URL = "https://simulator.home-connect.com/security/oauth/authorize";
+//    private static final String TOKEN_SERVER_URL = "https://simulator.home-connect.com/security/oauth/token";
+//    private static final String AUTHORIZATION_SERVER_URL = "https://simulator.home-connect.com/security/oauth/authorize";
 
     /**For physical device. */
-//    private static final String TOKEN_SERVER_URL = "https://api.home-connect.com/security/oauth/token";
-//    private static final String AUTHORIZATION_SERVER_URL = "https://api.home-connect.com/security/oauth/authorize";
+    private static final String TOKEN_SERVER_URL = "https://api.home-connect.com/security/oauth/token";
+    private static final String AUTHORIZATION_SERVER_URL = "https://api.home-connect.com/security/oauth/authorize";
 
     /** Object attributes.*/
     private  String username;
@@ -85,6 +94,8 @@ public class OAuthAuthorization implements Serializable{
 
     /**
      * Authorizes the installed application to access user's protected data.
+     * @return returns Credential object
+     * @throws AuthorizationException Exception caused by authorization error
      */
     public Credential authorize() throws AuthorizationException {
         try {
@@ -117,12 +128,16 @@ public class OAuthAuthorization implements Serializable{
         }
     }
 
-    /** Get the username during runtime for verification.*/
+    /** Get the username during runtime for verification.
+     * @return returns the username of the client
+     * */
     public String getUsername() {
         return this.username;
     }
 
-    /** Set DataStoreFactory after reserialization.*/
+    /** Set DataStoreFactory after reserialization.
+     * @param DATA_STORE_FACTORY object to store credentials
+     * @return returns DATA_STORE_FACTORY object*/
     public OAuthAuthorization setDataStoreFactory(FileDataStoreFactory DATA_STORE_FACTORY) {
         OAuthAuthorization.DATA_STORE_FACTORY = DATA_STORE_FACTORY;
         return this;
@@ -151,18 +166,19 @@ public class OAuthAuthorization implements Serializable{
         return credentials;
     }
 
-    public static Credential createCredentials(String username, String apiKey, String apiSecret) throws AuthorizationException {
+    public static Credential createCredentials(String username,String redirectURI, int port, String apiKey, String apiSecret, String storePath) throws AuthorizationException {
         Credential credentials;
         try {
-            FileDataStoreFactory dataStoreFactory = new FileDataStoreFactory(DATA_STORE_DIR);
+            FileDataStoreFactory dataStoreFactory = new FileDataStoreFactory(new File(storePath));
             
             /** User specific information given in batch file for initialization. 
                 IP and port of jetty server are hardcoded. */
             OAuthSerializer serializer = new OAuthSerializer();
-            OAuthAuthorization authorization = new OAuthAuthorization(username, "127.0.0.1", 8085, apiKey, apiSecret, dataStoreFactory);
+           // OAuthAuthorization authorization = new OAuthAuthorization(username, "127.0.0.1", 8085, apiKey, apiSecret, dataStoreFactory);
+            OAuthAuthorization authorization = new OAuthAuthorization(username, redirectURI, port, apiKey, apiSecret, dataStoreFactory);
             
             /** Store authorization client in file.*/
-            serializer.writeObject(username, authorization);
+            serializer.writeObject(username, authorization, storePath);
             
             /** Order credentials and store in file.*/
             credentials = authorization.authorize();
@@ -176,16 +192,20 @@ public class OAuthAuthorization implements Serializable{
     /**
      * Initial main method, to register a user for authorization.
      * 
-     * @param args Username, Client - ID and Client - Secret
+     * @param args Username, Client - ID and Client - Secret, redirectURI, port, storePath
      * 
-     * @throws HomeConnectException
+     * @throws HomeConnectException Exception in HomeConnect interface
      */
     public static void main(String[] args) throws HomeConnectException {
         String username  = args[0];
         String apiKey    = args[1];
         String apiSecret = args[2];
+        String redirectURI = args[3];
+    	int port = Integer.parseInt(args[4]);
+    	String storePath =args[5]+"/credential_storage";
+        
         try {
-            Credential credentials = createCredentials(username, apiKey, apiSecret);
+            Credential credentials = createCredentials(username, redirectURI, port, apiKey, apiSecret, storePath);
             
             /**Check if authorization worked.*/
             if (credentials != null) {

@@ -31,7 +31,8 @@ project.ext {
 
   distributionProjects = subprojects.findAll {
     it.getPath() == ':api' ||
-    it.getPath() == ':bundle'
+    it.getPath() == ':bundle' ||
+	it.getPath() == ':bundle:demo' 
   }
 
   javadocProjects = distributionProjects.findAll {

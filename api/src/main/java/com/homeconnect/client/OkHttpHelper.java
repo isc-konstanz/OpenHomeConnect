@@ -132,7 +132,11 @@ public class OkHttpHelper {
         }
     }
     
-    /** Build request and refresh the token if its about to expire. */
+    /** Build request and refresh the token if its about to expire. 
+     * @param credential Credentials for API connection
+     * @return Returns Request body
+     * @throws HomeConnectException Exception in HomeConnect interface
+     */
     public static Request.Builder requestBuilder(Credential credential)
             throws HomeConnectException {
     try {

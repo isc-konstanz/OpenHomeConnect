@@ -58,6 +58,30 @@ public class Data {
         return parseBoolean(value);
     }
 
+    public byte getValueAsByte() {
+    	return value.getBytes()[0];
+    }
+    
+    public byte[] getValueAsByteArray() {
+    	return value.getBytes();
+    }
+    
+    public double getValueAsDouble() {
+    	return value != null ? Float.valueOf(value).doubleValue() : 0.0;
+    }
+    
+    public float getValueAsFloat() {
+    	return (float) (value != null ? Float.parseFloat(value) : 0.0);
+    }
+    
+    public long getValueAsLong() {
+    	return (long) (value != null ? Float.valueOf(value).longValue() : 0.0);
+    }
+    
+    public short getValueAsShort() {
+    	return (short) (value != null ? Float.valueOf(value).shortValue() : 0.0);
+    }
+    
     @Override
     public String toString() {
         return "Data [name=" + name + ", value=" + value + ", unit=" + unit + "]";

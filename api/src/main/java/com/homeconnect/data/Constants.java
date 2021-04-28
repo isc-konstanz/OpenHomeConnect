@@ -53,6 +53,12 @@ public class Constants {
     public static final String SETTINGS_FRIDGE_SETPOINT_TEMPERATURE = "Refrigeration.FridgeFreezer.Setting.SetpointTemperatureRefrigerator";
     public static final String SETTINGS_FREEZER_SUPER_MODE = "Refrigeration.FridgeFreezer.Setting.SuperModeFreezer";
     public static final String SETTINGS_FRIDGE_SUPER_MODE = "Refrigeration.FridgeFreezer.Setting.SuperModeRefrigerator";
+    public static final String SETTINGS_FRIDGE_ECO_MODE = "Refrigeration.Common.Setting.EcoMode";
+   
+    public static final String DUMMY = "";
+    // Backslash important for path building
+    public static final String OPTION_FINISH_IN_RELATIVE = "BSH.Common.Option.FinishInRelative";
+    public static final String OPTION_ESTIMATED_TOTAL_PROGRAM_TIME ="BSH.Common.Option.RemainingProgramTime";
 
 //    // SSE Event types
 //    public static final String EVENT_ELAPSED_PROGRAM_TIME = "BSH.Common.Option.ElapsedProgramTime";

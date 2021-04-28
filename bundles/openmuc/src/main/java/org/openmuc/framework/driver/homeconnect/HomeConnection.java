@@ -25,10 +25,7 @@ import static com.homeconnect.data.Constants.API_BASE_URL;
 import java.text.MessageFormat;
 import java.util.List;
 
-import org.openmuc.framework.data.BooleanValue;
-import org.openmuc.framework.data.DoubleValue;
 import org.openmuc.framework.data.Flag;
-import org.openmuc.framework.data.Record;
 import org.openmuc.framework.data.Value;
 import org.openmuc.framework.driver.Device;
 import org.openmuc.framework.driver.spi.ConnectionException;
@@ -39,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import com.homeconnect.client.HomeConnectApiClient;
 import com.homeconnect.client.exception.HomeConnectException;
+import com.homeconnect.client.exception.InvalidScopeOrIdException;
 
 @AddressSyntax(separator = "@")
 public class HomeConnection extends Device<HomeConnectChannel> {
@@ -75,38 +73,25 @@ public class HomeConnection extends Device<HomeConnectChannel> {
             throws UnsupportedOperationException, ConnectionException {
         
         long samplingTime = System.currentTimeMillis();
-        
-        for (HomeConnectChannel channel : channels) {
-            logger.debug("Read channel \"{}\": {}@{}", channel.getId(), channel.getResource(), channel.getHomeApplianceId());
-            try {
-                Value value;
-                switch (channel.getResource()) {
-                case FRIDGE_TEMPERATURE_SETPOINT:
-                    value = new DoubleValue(client.getFridgeSetpointTemperature(channel.getHomeApplianceId()).getValueAsInt());
-                    break;
-                case FREEZER_TEMPERATURE_SETPOINT:
-                    value = new DoubleValue(client.getFreezerSetpointTemperature(channel.getHomeApplianceId()).getValueAsInt());
-                    break;
-                case FRIDGE_SUPER_MODE:
-                    value = new BooleanValue(client.getFridgeSuperMode(channel.getHomeApplianceId()).getValueAsBoolean());
-                    break;
-                case FREEZER_SUPER_MODE:
-                    value = new BooleanValue(client.getFreezerSuperMode(channel.getHomeApplianceId()).getValueAsBoolean());
-                    break;
-                default:
+        try {
+			for (HomeConnectChannel channel : channels) {
+				logger.debug("Read channel \"{}\": {}@{}", channel.getId(), channel.getResource(),
+						channel.getHomeApplianceId());
+				try {
+					channel.setData(client.get(channel.getHomeApplianceId(), channel.getResource()), samplingTime);
+					logger.trace("Read value from channel \"{}\": {}", channel.getId(), channel.getValue());       
+					
+				} catch (UnsupportedOperationException e) {
+					channel.setFlag(Flag.ACCESS_METHOD_NOT_SUPPORTED);
                     logger.warn("Unable to read resource {}", channel.getResource());
-                    
-                    channel.setFlag(Flag.ACCESS_METHOD_NOT_SUPPORTED);
-                    continue;
-                }
-                channel.setRecord(new Record(value, samplingTime, Flag.VALID));
-                
-                logger.trace("Read value from channel \"{}\": {}", channel.getId(), value);
-                
-            } catch (HomeConnectException e) {
-                throw new ConnectionException(MessageFormat.format("Error reading channel {0}: {1}", 
-                        channel.getId(), e.getMessage()));
-            }
+				} catch (InvalidScopeOrIdException e) {
+				    channel.setFlag(Flag.DRIVER_ERROR_READ_FAILURE);
+				    logger.warn("Wrong scope or haId configured for resource {}", channel.getResource());
+			    }
+			}
+        } catch(HomeConnectException e) {
+        	throw new ConnectionException(
+        			MessageFormat.format("Error reading channel! {0}", e.getMessage()));
         }
         return null;
     }
@@ -114,38 +99,29 @@ public class HomeConnection extends Device<HomeConnectChannel> {
     @Override
     protected Object onWrite(List<HomeConnectChannel> channels, Object containerListHandle)
             throws UnsupportedOperationException, ConnectionException {
-        
-        for (HomeConnectChannel channel : channels) {
-            logger.debug("Write channel \"{}\": {}@{}", channel.getId(), channel.getResource(), channel.getHomeApplianceId());
-            try {
-                Value value = channel.getValue();
-                switch (channel.getResource()) {
-                case FRIDGE_TEMPERATURE_SETPOINT:
-                    client.setFridgeSetpointTemperature(channel.getHomeApplianceId(), value.asString(), "°C");
-                    break;
-                case FREEZER_TEMPERATURE_SETPOINT:
-                    client.setFreezerSetpointTemperature(channel.getHomeApplianceId(), value.asString(), "°C");
-                    break;
-                case FRIDGE_SUPER_MODE:
-                    client.setFridgeSuperMode(channel.getHomeApplianceId(), value.asBoolean());
-                    break;
-                case FREEZER_SUPER_MODE:
-                    client.setFreezerSuperMode(channel.getHomeApplianceId(), value.asBoolean());
-                    break;
-                default:
-                    logger.warn("Unable to write to resource {}", channel.getResource());
-                    
-                    channel.setFlag(Flag.ACCESS_METHOD_NOT_SUPPORTED);
-                    continue;
-                }
-                channel.setFlag(Flag.VALID);
-                
-                logger.trace("Wrote value to channel \"{}\": {}", channel.getId(), value);
-                
-            } catch (HomeConnectException e) {
-                throw new ConnectionException(MessageFormat.format("Error writing to channel {0}: {1}", 
-                        channel.getId(), e.getMessage()));
-            }
+        try {
+			for (HomeConnectChannel channel : channels) {
+				logger.debug("Write channel \"{}\": {}@{}", channel.getId(), channel.getResource(),
+						channel.getHomeApplianceId());
+				try {
+					Value value = channel.getValue();
+					client.set(channel.getHomeApplianceId(), channel.getResource(), value.asString(),
+							channel.getUnit());
+
+					channel.setFlag(Flag.VALID);
+					logger.trace("Wrote value to channel \"{}\": {}", channel.getId(), value);
+
+				} catch (UnsupportedOperationException e) {
+					channel.setFlag(Flag.ACCESS_METHOD_NOT_SUPPORTED);
+					logger.warn("Unable to write resource {}", channel.getResource());
+				} catch (InvalidScopeOrIdException e) {
+					channel.setFlag(Flag.DRIVER_ERROR_READ_FAILURE);
+					logger.warn("Wrong scope or haId configured for resource {}", channel.getResource());
+				}			
+			}
+        } catch (HomeConnectException e) {
+        	throw new ConnectionException(
+        			MessageFormat.format("Error reading channel! {0}", e.getMessage()));
         }
         return null;
     }

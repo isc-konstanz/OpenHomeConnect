@@ -21,10 +21,23 @@
 package org.openmuc.framework.driver.homeconnect;
 
 import org.openmuc.framework.config.ArgumentSyntaxException;
+import org.openmuc.framework.data.BooleanValue;
+import org.openmuc.framework.data.ByteArrayValue;
+import org.openmuc.framework.data.ByteValue;
+import org.openmuc.framework.data.DoubleValue;
+import org.openmuc.framework.data.Flag;
+import org.openmuc.framework.data.FloatValue;
+import org.openmuc.framework.data.IntValue;
+import org.openmuc.framework.data.LongValue;
+import org.openmuc.framework.data.Record;
+import org.openmuc.framework.data.ShortValue;
+import org.openmuc.framework.data.StringValue;
+import org.openmuc.framework.data.Value;
 import org.openmuc.framework.driver.Channel;
 import org.openmuc.framework.options.Address;
 import org.openmuc.framework.options.AddressSyntax;
 
+import com.homeconnect.client.model.Data;
 import com.homeconnect.data.Resource;
 
 @AddressSyntax(separator = "@")
@@ -43,6 +56,8 @@ public class HomeConnectChannel extends Channel {
              description = "The unique home appliance ID",
              mandatory = true)
     private String haId;
+    
+    private Value value = null; 
 
     @Override
     protected void onConfigure() throws ArgumentSyntaxException {
@@ -61,5 +76,41 @@ public class HomeConnectChannel extends Channel {
     public String getHomeApplianceId() {
         return haId; 
     }
-
+    
+    public void setData(Data data, long timestamp) {
+    	
+    	switch(getValueType()) {
+		case BOOLEAN:
+			value = new BooleanValue(data.getValueAsBoolean());
+			break;
+		case BYTE:
+			value = new ByteValue(data.getValueAsByte());
+			break;
+		case BYTE_ARRAY:
+			value = new ByteArrayValue(data.getValueAsByteArray());
+			break;
+		case DOUBLE:
+			value = new DoubleValue(data.getValueAsDouble());
+			break;
+		case FLOAT:
+			value = new FloatValue(data.getValueAsFloat());
+			break;
+		case INTEGER:
+			value = new IntValue(data.getValueAsInt());
+			break;
+		case LONG:
+			value = new LongValue(data.getValueAsLong());
+			break;
+		case SHORT:
+			value = new ShortValue(data.getValueAsShort());
+			break;
+		case STRING:
+			value = new StringValue(data.getValue());
+			break;
+		default:
+			break;
+    	
+    	}
+        setRecord(new Record(value,timestamp,Flag.VALID));
+    }   
 }

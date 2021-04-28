@@ -51,6 +51,7 @@ import com.homeconnect.client.exception.ApplianceOfflineException;
 import com.homeconnect.client.exception.AuthorizationException;
 import com.homeconnect.client.exception.CommunicationException;
 import com.homeconnect.client.exception.HomeConnectException;
+import com.homeconnect.client.exception.InvalidScopeOrIdException;
 import com.homeconnect.client.model.ApiRequest;
 import com.homeconnect.client.model.AvailableProgram;
 import com.homeconnect.client.model.AvailableProgramOption;
@@ -60,6 +61,7 @@ import com.homeconnect.client.model.HomeConnectRequest;
 import com.homeconnect.client.model.HomeConnectResponse;
 import com.homeconnect.client.model.Option;
 import com.homeconnect.client.model.Program;
+import com.homeconnect.data.Resource;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -81,9 +83,11 @@ public class HomeConnectApiClient {
     private static final String CONTENT_TYPE = "Content-Type";
     private static final String BSH_JSON_V1 = "application/vnd.bsh.sdk.v1+json";
     private static final MediaType BSH_JSON_V1_MEDIA_TYPE = requireNonNull(MediaType.parse(BSH_JSON_V1));
-    private static final int VALUE_TYPE_STRING = 0;
-    private static final int VALUE_TYPE_INT = 1;
-    private static final int VALUE_TYPE_BOOLEAN = 2;
+    
+    public static final int VALUE_TYPE_STRING = 0;
+    public static final int VALUE_TYPE_INT = 1;
+    public static final int VALUE_TYPE_BOOLEAN = 2;
+    
     private static final int COMMUNICATION_QUEUE_SIZE = 50;
 
     private final Logger logger;
@@ -122,7 +126,7 @@ public class HomeConnectApiClient {
      * Get all home appliances
      *
      * @return list of {@link HomeAppliance}
-     * @throws HomeConnectException 
+     * @throws HomeConnectException Exception in HomeConnect interface
      */
     public List<HomeAppliance> getHomeAppliances() throws HomeConnectException {
         Request request = createGetRequest("/api/homeappliances");
@@ -145,7 +149,7 @@ public class HomeConnectApiClient {
      *
      * @param haId home appliance id
      * @return {@link HomeAppliance}
-     * @throws HomeConnectException
+     * @throws HomeConnectException Exception in HomeConnect interface
      */
     public HomeAppliance getHomeAppliance(String haId) throws HomeConnectException {
         Request request = createGetRequest("/api/homeappliances/" + haId);
@@ -168,7 +172,7 @@ public class HomeConnectApiClient {
      *
      * @param haId home appliance id
      * @return {@link Data}
-     * @throws HomeConnectException
+     * @throws HomeConnectException Exception in HomeConnect interface
      */
     public Data getAmbientLightState(String haId)
             throws HomeConnectException {
@@ -180,7 +184,7 @@ public class HomeConnectApiClient {
      *
      * @param haId home appliance id
      * @param enable enable or disable ambient light
-     * @throws HomeConnectException
+     * @throws HomeConnectException Exception in HomeConnect interface
      */
     public void setAmbientLightState(String haId, boolean enable)
             throws HomeConnectException {
@@ -193,7 +197,7 @@ public class HomeConnectApiClient {
      *
      * @param haId home appliance id
      * @return {@link Data}
-     * @throws HomeConnectException
+     * @throws HomeConnectException Exception in HomeConnect interface
      */
     public Data getFunctionalLightState(String haId)
             throws HomeConnectException {
@@ -205,7 +209,7 @@ public class HomeConnectApiClient {
      *
      * @param haId home appliance id
      * @param enable enable or disable functional light
-     * @throws HomeConnectException
+     * @throws HomeConnectException Exception in HomeConnect interface
      */
     public void setFunctionalLightState(String haId, boolean enable)
             throws HomeConnectException {
@@ -218,7 +222,7 @@ public class HomeConnectApiClient {
      *
      * @param haId home appliance id
      * @return {@link Data}
-     * @throws HomeConnectException
+     * @throws HomeConnectException Exception in HomeConnect interface
      */
     public Data getFunctionalLightBrightnessState(String haId)
             throws HomeConnectException {
@@ -230,7 +234,7 @@ public class HomeConnectApiClient {
      *
      * @param haId home appliance id
      * @param value brightness value 10-100
-     * @throws HomeConnectException
+     * @throws HomeConnectException Exception in HomeConnect interface
      */
     public void setFunctionalLightBrightnessState(String haId, int value)
             throws HomeConnectException {
@@ -243,7 +247,7 @@ public class HomeConnectApiClient {
      *
      * @param haId home appliance id
      * @return {@link Data}
-     * @throws HomeConnectException
+     * @throws HomeConnectException Exception in HomeConnect interface
      */
     public Data getAmbientLightBrightnessState(String haId)
             throws HomeConnectException {
@@ -255,7 +259,7 @@ public class HomeConnectApiClient {
      *
      * @param haId home appliance id
      * @param value brightness value 10-100
-     * @throws HomeConnectException
+     * @throws HomeConnectException Exception in HomeConnect interface
      */
     public void setAmbientLightBrightnessState(String haId, int value)
             throws HomeConnectException {
@@ -268,7 +272,7 @@ public class HomeConnectApiClient {
      *
      * @param haId home appliance id
      * @return {@link Data}
-     * @throws HomeConnectException
+     * @throws HomeConnectException Exception in HomeConnect interface
      */
     public Data getAmbientLightColorState(String haId)
             throws HomeConnectException {
@@ -280,7 +284,7 @@ public class HomeConnectApiClient {
      *
      * @param haId home appliance id
      * @param value color code
-     * @throws HomeConnectException
+     * @throws HomeConnectException Exception in HomeConnect interface
      */
     public void setAmbientLightColorState(String haId, String value)
             throws HomeConnectException {
@@ -292,7 +296,7 @@ public class HomeConnectApiClient {
      *
      * @param haId home appliance id
      * @return {@link Data}
-     * @throws HomeConnectException
+     * @throws HomeConnectException Exception in HomeConnect interface
      */
     public Data getAmbientLightCustomColorState(String haId)
             throws HomeConnectException {
@@ -304,7 +308,7 @@ public class HomeConnectApiClient {
      *
      * @param haId home appliance id
      * @param value color code
-     * @throws HomeConnectException
+     * @throws HomeConnectException Exception in HomeConnect interface
      */
     public void setAmbientLightCustomColorState(String haId, String value)
             throws HomeConnectException {
@@ -316,7 +320,7 @@ public class HomeConnectApiClient {
      *
      * @param haId home appliance id
      * @return {@link Data}
-     * @throws HomeConnectException
+     * @throws HomeConnectException Exception in HomeConnect interface
      */
     public Data getPowerState(String haId)
             throws HomeConnectException {
@@ -328,121 +332,172 @@ public class HomeConnectApiClient {
      *
      * @param haId home appliance id
      * @param state target state
-     * @throws HomeConnectException
+     * @throws HomeConnectException Exception in HomeConnect interface
      */
     public void setPowerState(String haId, String state)
             throws HomeConnectException {
         putSettings(haId, new Data("BSH.Common.Setting.PowerState", state, null));
     }
 
-    /**
-     * Get setpoint temperature of freezer
-     *
-     * @param haId home appliance id
-     * @return {@link Data}
-     * @throws HomeConnectException
-     */
-    public Data getFreezerSetpointTemperature(String haId)
-            throws HomeConnectException {
-        return getSetting(haId, "Refrigeration.FridgeFreezer.Setting.SetpointTemperatureFreezer");
+    public Data get(String haId, Resource resource)
+            throws UnsupportedOperationException, HomeConnectException, InvalidScopeOrIdException {
+		switch (resource.getType()) {
+		case PROGRAM_ACTIVE:
+			if(getActiveProgram(haId) == null){
+				return new Data(resource.getKey(), "false", "boolean");
+			} else {
+				return new Data(resource.getKey(), "true", "boolean");
+			}
+		case PROGRAM_SELECTED:
+			Program program = getSelectedProgram(haId);
+			return new Data (program.getKey(), program.getKey(), "String");
+		case PROGRAM_ACTIVE_OPTIONS:
+            return getOptionActiveProgram(haId, resource.getKey());
+		case SETTINGS:
+			return getSetting(haId, resource.getKey());
+		case STATUS:
+			return getStatus(haId, resource.getKey());
+		default:
+			logger.warn("Wrong type configured for resource {}", resource);
+			throw new UnsupportedOperationException("Wrong type configured for resource: " + resource);
+		}
     }
-
-    /**
-     * Set setpoint temperature of freezer
-     *
-     * @param haId home appliance id
-     * @param state new temperature
-     * @throws HomeConnectException
-     */
-    public void setFreezerSetpointTemperature(String haId, String state, String unit)
-            throws HomeConnectException {
-        putSettings(haId, new Data("Refrigeration.FridgeFreezer.Setting.SetpointTemperatureFreezer", state, unit),
-                VALUE_TYPE_INT);
+    
+    public void set(String haId, Resource resource, String data, String unit) 
+            throws UnsupportedOperationException, HomeConnectException, InvalidScopeOrIdException {
+		switch (resource.getType()) {
+        case PROGRAM_AVAILABLE:
+        	break;
+		case PROGRAM_ACTIVE:
+			if(data == "true") {
+				startSelectedProgram(haId);
+			} else {
+				stopProgram(haId);
+			}
+			break;
+		case PROGRAM_SELECTED:
+			break;
+		case PROGRAM_ACTIVE_OPTIONS:
+			break;
+		case SETTINGS:
+			putSettings(haId, new Data(resource.getKey(), data, unit), resource.getValueType());
+			break;
+		case STATUS:
+			break;
+		default:
+			logger.warn("Wrong type configured for resource {}", resource);
+			throw new UnsupportedOperationException("Wrong type configured for resource: " + resource);
+		}
     }
-
-    /**
-     * Get setpoint temperature of fridge
-     *
-     * @param haId home appliance id
-     * @return {@link Data} or null in case of communication error
-     * @throws HomeConnectException
-     */
-    public Data getFridgeSetpointTemperature(String haId)
-            throws HomeConnectException {
-        return getSetting(haId, "Refrigeration.FridgeFreezer.Setting.SetpointTemperatureRefrigerator");
-    }
-
-    /**
-     * Set setpoint temperature of fridge
-     *
-     * @param haId home appliance id
-     * @param state new temperature
-     * @throws HomeConnectException
-     */
-    public void setFridgeSetpointTemperature(String haId, String state, String unit)
-            throws HomeConnectException {
-        putSettings(haId, new Data("Refrigeration.FridgeFreezer.Setting.SetpointTemperatureRefrigerator", state, unit),
-                VALUE_TYPE_INT);
-    }
-
-    /**
-     * Get fridge super mode
-     *
-     * @param haId home appliance id
-     * @return {@link Data}
-     * @throws HomeConnectException
-     */
-    public Data getFridgeSuperMode(String haId)
-            throws HomeConnectException {
-        return getSetting(haId, "Refrigeration.FridgeFreezer.Setting.SuperModeRefrigerator");
-    }
-
-    /**
-     * Set fridge super mode
-     *
-     * @param haId home appliance id
-     * @param enable enable or disable fridge super mode
-     * @throws HomeConnectException
-     */
-    public void setFridgeSuperMode(String haId, boolean enable)
-            throws HomeConnectException {
-        putSettings(haId,
-                new Data("Refrigeration.FridgeFreezer.Setting.SuperModeRefrigerator", String.valueOf(enable), null),
-                VALUE_TYPE_BOOLEAN);
-    }
-
-    /**
-     * Get freezer super mode
-     *
-     * @param haId home appliance id
-     * @return {@link Data}
-     * @throws HomeConnectException
-     */
-    public Data getFreezerSuperMode(String haId)
-            throws HomeConnectException {
-        return getSetting(haId, "Refrigeration.FridgeFreezer.Setting.SuperModeFreezer");
-    }
-
-    /**
-     * Set freezer super mode
-     *
-     * @param haId home appliance id
-     * @param enable enable or disable freezer super mode
-     * @throws HomeConnectException
-     */
-    public void setFreezerSuperMode(String haId, boolean enable)
-            throws HomeConnectException {
-        putSettings(haId,
-                new Data("Refrigeration.FridgeFreezer.Setting.SuperModeFreezer", String.valueOf(enable), null),
-                VALUE_TYPE_BOOLEAN);
-    }
+    
+//    /**
+//     * Get setpoint temperature of freezer
+//     *
+//     * @param haId home appliance id
+//     * @return {@link Data}
+//     * @throws HomeConnectException
+//     */
+//    public Data getFreezerSetpointTemperature(String haId)
+//            throws HomeConnectException {
+//        return getSetting(haId, "Refrigeration.FridgeFreezer.Setting.SetpointTemperatureFreezer");
+//    }
+    
+//    /**
+//     * Set setpoint temperature of freezer
+//     *
+//     * @param haId home appliance id
+//     * @param state new temperature
+//     * @throws HomeConnectException
+//     */
+//    public void setFreezerSetpointTemperature(String haId, String state, String unit)
+//            throws HomeConnectException {
+//        putSettings(haId, new Data("Refrigeration.FridgeFreezer.Setting.SetpointTemperatureFreezer", state, unit),
+//                VALUE_TYPE_INT);
+//    }
+//
+//    /**
+//     * Get setpoint temperature of fridge
+//     *
+//     * @param haId home appliance id
+//     * @return {@link Data} or null in case of communication error
+//     * @throws HomeConnectException
+//     */
+//    public Data getFridgeSetpointTemperature(String haId)
+//            throws HomeConnectException {
+//        return getSetting(haId, "Refrigeration.FridgeFreezer.Setting.SetpointTemperatureRefrigerator");
+//    }
+//
+//    /**
+//     * Set setpoint temperature of fridge
+//     *
+//     * @param haId home appliance id
+//     * @param state new temperature
+//     * @throws HomeConnectException
+//     */
+//    public void setFridgeSetpointTemperature(String haId, String state, String unit)
+//            throws HomeConnectException {
+//        putSettings(haId, new Data("Refrigeration.FridgeFreezer.Setting.SetpointTemperatureRefrigerator", state, unit),
+//                VALUE_TYPE_INT);
+//    }
+//
+//    /**
+//     * Get fridge super mode
+//     *
+//     * @param haId home appliance id
+//     * @return {@link Data}
+//     * @throws HomeConnectException
+//     */
+//    public Data getFridgeSuperMode(String haId)
+//            throws HomeConnectException {
+//        return getSetting(haId, "Refrigeration.FridgeFreezer.Setting.SuperModeRefrigerator");
+//    }
+//
+//    /**
+//     * Set fridge super mode
+//     *
+//     * @param haId home appliance id
+//     * @param enable enable or disable fridge super mode
+//     * @throws HomeConnectException
+//     */
+//    public void setFridgeSuperMode(String haId, boolean enable)
+//            throws HomeConnectException {
+//        putSettings(haId,
+//                new Data("Refrigeration.FridgeFreezer.Setting.SuperModeRefrigerator", String.valueOf(enable), null),
+//                VALUE_TYPE_BOOLEAN);
+//    }
+//
+//    /**
+//     * Get freezer super mode
+//     *
+//     * @param haId home appliance id
+//     * @return {@link Data}
+//     * @throws HomeConnectException
+//     */
+//    public Data getFreezerSuperMode(String haId)
+//            throws HomeConnectException {
+//        return getSetting(haId, "Refrigeration.FridgeFreezer.Setting.SuperModeFreezer");
+//    }
+//
+//    /**
+//     * Set freezer super mode
+//     *
+//     * @param haId home appliance id
+//     * @param enable enable or disable freezer super mode
+//     * @throws HomeConnectException
+//     */
+//    public void setFreezerSuperMode(String haId, boolean enable)
+//            throws HomeConnectException {
+//        putSettings(haId,
+//                new Data("Refrigeration.FridgeFreezer.Setting.SuperModeFreezer", String.valueOf(enable), null),
+//                VALUE_TYPE_BOOLEAN);
+//    }
 
     /**
      * Get door state of device.
      *
      * @param haId home appliance id
      * @return {@link Data}
-     * @throws HomeConnectException
+     * @throws HomeConnectException Exception in HomeConnect interface
      */
     public Data getDoorState(String haId)
             throws HomeConnectException {
@@ -454,7 +509,7 @@ public class HomeConnectApiClient {
      *
      * @param haId home appliance id
      * @return {@link Data}
-     * @throws HomeConnectException
+     * @throws HomeConnectException Exception in HomeConnect interface
      */
     public Data getOperationState(String haId)
             throws HomeConnectException {
@@ -466,7 +521,7 @@ public class HomeConnectApiClient {
      *
      * @param haId home appliance id
      * @return {@link Data}
-     * @throws HomeConnectException
+     * @throws HomeConnectException Exception in HomeConnect interface
      */
     public Data getCurrentCavityTemperature(String haId)
             throws HomeConnectException {
@@ -478,7 +533,7 @@ public class HomeConnectApiClient {
      *
      * @param haId haId home appliance id
      * @return true or false
-     * @throws HomeConnectException
+     * @throws HomeConnectException Exception in HomeConnect interface
      */
     public boolean isRemoteControlStartAllowed(String haId)
             throws HomeConnectException {
@@ -491,7 +546,7 @@ public class HomeConnectApiClient {
      *
      * @param haId haId home appliance id
      * @return true or false
-     * @throws HomeConnectException
+     * @throws HomeConnectException Exception in HomeConnect interface
      */
     public boolean isRemoteControlActive(String haId)
             throws HomeConnectException {
@@ -504,8 +559,8 @@ public class HomeConnectApiClient {
      *
      * @param haId haId home appliance id
      * @return true or false
-     * @throws HomeConnectException
-     */
+     * @throws HomeConnectException Exception in HomeConnect interface
+     */ 
     public boolean isLocalControlActive(String haId)
             throws HomeConnectException {
         Data data = getStatus(haId, "BSH.Common.Status.LocalControlActive");
@@ -517,19 +572,19 @@ public class HomeConnectApiClient {
      *
      * @param haId home appliance id
      * @return {@link Data} or null if there is no active program
-     * @throws HomeConnectException
+     * @throws HomeConnectException Exception in HomeConnect interface
      */
     public @Nullable Program getActiveProgram(String haId)
             throws HomeConnectException {
         return getProgram(haId, "/api/homeappliances/" + haId + "/programs/active");
-    }
+    } 
 
     /**
      * Get selected program of device.
      *
      * @param haId home appliance id
      * @return {@link Data} or null if there is no selected program
-     * @throws HomeConnectException
+     * @throws HomeConnectException Exception in HomeConnect interface
      */
     public @Nullable Program getSelectedProgram(String haId)
             throws HomeConnectException {
@@ -547,11 +602,13 @@ public class HomeConnectApiClient {
         putData(haId, "/api/homeappliances/" + haId + "/programs/active", new Data(program, null, null),
                 VALUE_TYPE_STRING);
     }
-
+    
+////////////////////////////
     public void startSelectedProgram(String haId)
             throws HomeConnectException {
-        @Nullable
-        String selectedProgram = getRaw(haId, "/api/homeappliances/" + haId + "/programs/selected");
+//        @Nullable
+//        String selectedProgram = getRaw(haId, "/api/homeappliances/" + haId + "/programs/selected");
+    	String selectedProgram = "{ \"data\":{ \"key\": \""+getSelectedProgram(haId).getKey()+"\"}}";
         if (selectedProgram != null) {
             putRaw(haId, "/api/homeappliances/" + haId + "/programs/active", selectedProgram);
         }
@@ -620,7 +677,11 @@ public class HomeConnectApiClient {
     public Queue<ApiRequest> getLatestApiRequests() {
         return communicationQueue;
     }
-
+//////////////////
+    private Data getOptionActiveProgram(String haId, String option) 
+    		throws HomeConnectException {
+    	return getData(haId, "/api/homeappliances/" + haId +"/programs/active/options/" + option);
+    }
     private Data getSetting(String haId, String setting)
             throws HomeConnectException {
         return getData(haId, "/api/homeappliances/" + haId + "/settings/" + setting);
@@ -707,7 +768,7 @@ public class HomeConnectApiClient {
         }
         return null;
     }
-
+    
     private List<AvailableProgram> getAvailablePrograms(String haId, String path)
             throws HomeConnectException {
         Request request = createGetRequest(path);
@@ -844,13 +905,13 @@ public class HomeConnectApiClient {
 
     private void checkResponseCode(int desiredCode, Request request, Response response, @Nullable String haId,
             @Nullable String requestPayload)
-            throws CommunicationException, AuthorizationException, ApplianceOfflineException {
+            throws CommunicationException, AuthorizationException, ApplianceOfflineException, InvalidScopeOrIdException {
         checkResponseCode(singletonList(desiredCode), request, response, haId, requestPayload);
     }
 
     private void checkResponseCode(List<Integer> desiredCodes, Request request, Response response,
             @Nullable String haId, @Nullable String requestPayload)
-            throws CommunicationException, AuthorizationException, ApplianceOfflineException {
+            throws CommunicationException, AuthorizationException, ApplianceOfflineException, InvalidScopeOrIdException {
 
         if (!desiredCodes.contains(HTTP_UNAUTHORIZED) && response.code() == HTTP_UNAUTHORIZED) {
             logger.debug("Current access token is invalid.");
@@ -880,7 +941,14 @@ public class HomeConnectApiClient {
             if (code == HTTP_CONFLICT && containsIgnoreCase(responseBody, "error")
                     && containsIgnoreCase(responseBody, "offline")) {
                 throw new ApplianceOfflineException(code, message, responseBody);
-            } else {
+            } 
+            else if (code == 403 && containsIgnoreCase(responseBody, "error")) {
+            	throw new InvalidScopeOrIdException(code, message, responseBody);
+            }
+            else if (code == 404 && containsIgnoreCase(responseBody, "error")) {
+            	throw new UnsupportedOperationException(responseBody);
+            }
+            else {
                 throw new CommunicationException(code, message, responseBody);
             }
         }

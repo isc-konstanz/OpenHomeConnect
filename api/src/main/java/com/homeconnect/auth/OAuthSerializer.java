@@ -1,14 +1,22 @@
-/**
- * Copyright (c) 2010-2020 Contributors to the openHAB project
+/*
+ * Copyright 2016-20 ISC Konstanz
  *
- * See the NOTICE file(s) distributed with this work for additional
- * information.
+ * This file is part of OpenHomeConnect.
+ * For more information visit https://github.com/isc-konstanz/OpenHomeConnect.
  *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0
+ * OpenHomeConnect is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * SPDX-License-Identifier: EPL-2.0
+ * OpenHomeConnect is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with OpenHomeConnect.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 package com.homeconnect.auth;
 
@@ -27,17 +35,16 @@ public class OAuthSerializer {
 
     private final static Logger logger = LoggerFactory.getLogger(OAuthSerializer.class);
 
-    /*
+    /**
      * Method to write authorizationClient in file for later use.
      * 
      * @param oauthAuthorization Authorization object consists of Username, Client - ID, Client - Secret
      * 
-     * @throws FileNotFoundException
-     * @throws IOException
-     */
-    public void writeObject(String username, OAuthAuthorization oauthAuthorization) throws FileNotFoundException, IOException {
-        File file = new File(System.getProperty("user.home"), ".store/"+username+".ser");
-        
+     * @throws FileNotFoundException Exception caused by missing file.
+     * @throws IOException Exception caused by error during writing file.
+     **/
+    public void writeObject(String username, OAuthAuthorization oauthAuthorization, String storePath) throws FileNotFoundException, IOException {
+        File file = new File(storePath+"/"+username+".ser");
         FileOutputStream fileStream = new FileOutputStream(file);
         ObjectOutputStream objectStream = new ObjectOutputStream(fileStream);
         try {
@@ -57,12 +64,12 @@ public class OAuthSerializer {
      * 
      * @return return authorization object
      * 
-     * @throws FileNotFoundException
-     * @throws IOException
+     * @throws FileNotFoundException Exception caused by missing file.
+     * @throws IOException	Exception caused by error during reading file.
      */
     public OAuthAuthorization readObject(String username) throws FileNotFoundException, IOException {
-        File file = new File(System.getProperty("user.home"), ".store/"+username+".ser");
-        
+    	File file = new File(System.getProperty(OAuthAuthorization.class.getPackage().getName().toLowerCase() + ".store",
+				System.getProperty("user.home") + "/.store")+"/credential_storage/"+username+".ser");
         FileInputStream fileStream = new FileInputStream(file);
         ObjectInputStream objectStream = new ObjectInputStream(fileStream);    
         OAuthAuthorization auth;

@@ -90,7 +90,8 @@ public class HomeConnectEventSourceClient {
      * Checkout rate limits of the API at. https://developer.home-connect.com/docs/general/ratelimiting
      *
      * @param eventListener appliance event listener
-     * @throws Exception
+     * @param haId HomaAppliance identification
+     * @throws Exception Exception
      */
     public synchronized void registerEventListener(final String haId, final HomeConnectEventListener eventListener)
             throws Exception {
