@@ -677,11 +677,12 @@ public class HomeConnectApiClient {
     public Queue<ApiRequest> getLatestApiRequests() {
         return communicationQueue;
     }
-//////////////////
+
     private Data getOptionActiveProgram(String haId, String option) 
     		throws HomeConnectException {
     	return getData(haId, "/api/homeappliances/" + haId +"/programs/active/options/" + option);
     }
+
     private Data getSetting(String haId, String setting)
             throws HomeConnectException {
         return getData(haId, "/api/homeappliances/" + haId + "/settings/" + setting);
@@ -729,7 +730,7 @@ public class HomeConnectApiClient {
 
     private String putRaw(String haId, String path, String requestBodyPayload)
             throws HomeConnectException {
-        @Deprecated
+		@Deprecated
         RequestBody requestBody = RequestBody.create(BSH_JSON_V1_MEDIA_TYPE,
                 requestBodyPayload.getBytes(StandardCharsets.UTF_8));
 
