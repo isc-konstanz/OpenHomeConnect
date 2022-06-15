@@ -38,13 +38,16 @@ public class OAuthSerializer {
     /**
      * Method to write authorizationClient in file for later use.
      * 
+     * @param username Username to find object
      * @param oauthAuthorization Authorization object consists of Username, Client - ID, Client - Secret
+     * @param storePath Directory path to store credentials in
      * 
      * @throws FileNotFoundException Exception caused by missing file.
      * @throws IOException Exception caused by error during writing file.
      **/
-    public void writeObject(String username, OAuthAuthorization oauthAuthorization, String storePath) throws FileNotFoundException, IOException {
-        File file = new File(storePath+"/"+username+".ser");
+    public void writeObject(String username, OAuthAuthorization oauthAuthorization, String storePath) 
+    		throws FileNotFoundException, IOException {
+        File file = new File(storePath, username+".ser");
         FileOutputStream fileStream = new FileOutputStream(file);
         ObjectOutputStream objectStream = new ObjectOutputStream(fileStream);
         try {
@@ -61,15 +64,16 @@ public class OAuthSerializer {
      * Method to read authorizationClient out of file. 
      * 
      * @param username Username to find object
+     * @param storePath Directory path to store credentials in
      * 
      * @return return authorization object
      * 
      * @throws FileNotFoundException Exception caused by missing file.
      * @throws IOException	Exception caused by error during reading file.
      */
-    public OAuthAuthorization readObject(String username) throws FileNotFoundException, IOException {
-    	File file = new File(System.getProperty(OAuthAuthorization.class.getPackage().getName().toLowerCase() + ".store",
-				System.getProperty("user.home") + "/.store")+"/credential_storage/"+username+".ser");
+    public OAuthAuthorization readObject(String username, String storePath) 
+    		throws FileNotFoundException, IOException {
+        File file = new File(storePath, username+".ser");
         FileInputStream fileStream = new FileInputStream(file);
         ObjectInputStream objectStream = new ObjectInputStream(fileStream);    
         OAuthAuthorization auth;

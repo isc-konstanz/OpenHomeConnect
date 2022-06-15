@@ -22,9 +22,9 @@ package com.homeconnect.auth;
 
 import static com.homeconnect.data.Constants.OAUTH_SCOPE;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Path;
 import java.util.Arrays;
 
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
@@ -47,9 +47,9 @@ public class OAuthAuthorization implements Serializable{
     private static final long serialVersionUID = 1L;
 
     /** Directory to store user credentials. */
-    public static final File DATA_STORE_DIR = 
-    		new File(System.getProperty(OAuthAuthorization.class.getPackage().getName().toLowerCase() + ".store",
-    				System.getProperty("user.home") + "/.store")+"/credential_storage");
+    public static final Path DATA_STORE_DIR = 
+    		Path.of(System.getProperty(OAuthAuthorization.class.getPackage().getName().toLowerCase(),
+    				System.getProperty("user.home")), ".auth");
 
     /**
     * Global instance of the {@link DataStoreFactory}. The best practice is to make it a single
@@ -146,11 +146,11 @@ public class OAuthAuthorization implements Serializable{
     public static Credential getCredentials(String username) throws AuthorizationException {
         Credential credentials;
         try {
-            FileDataStoreFactory dataStoreFactory = new FileDataStoreFactory(DATA_STORE_DIR);
+            FileDataStoreFactory dataStoreFactory = new FileDataStoreFactory(DATA_STORE_DIR.toFile());
             
             /** Read the stored authorization client out of file.*/
             OAuthSerializer serializer = new OAuthSerializer();
-            OAuthAuthorization authorization = serializer.readObject(username);
+            OAuthAuthorization authorization = serializer.readObject(username, DATA_STORE_DIR.toString());
             
             /** Set the Data_Store_Factory, because it is not serializable.*/
             authorization.setDataStoreFactory(dataStoreFactory);
@@ -166,19 +166,18 @@ public class OAuthAuthorization implements Serializable{
         return credentials;
     }
 
-    public static Credential createCredentials(String username,String redirectURI, int port, String apiKey, String apiSecret, String storePath) throws AuthorizationException {
+    public static Credential createCredentials(String username, String redirectURI, int port, String apiKey, String apiSecret, Path storePath) throws AuthorizationException {
         Credential credentials;
         try {
-            FileDataStoreFactory dataStoreFactory = new FileDataStoreFactory(new File(storePath));
+            FileDataStoreFactory dataStoreFactory = new FileDataStoreFactory(storePath.toFile());
             
             /** User specific information given in batch file for initialization. 
                 IP and port of jetty server are hardcoded. */
             OAuthSerializer serializer = new OAuthSerializer();
-           // OAuthAuthorization authorization = new OAuthAuthorization(username, "127.0.0.1", 8085, apiKey, apiSecret, dataStoreFactory);
             OAuthAuthorization authorization = new OAuthAuthorization(username, redirectURI, port, apiKey, apiSecret, dataStoreFactory);
             
             /** Store authorization client in file.*/
-            serializer.writeObject(username, authorization, storePath);
+            serializer.writeObject(username, authorization, storePath.toString());
             
             /** Order credentials and store in file.*/
             credentials = authorization.authorize();
@@ -201,9 +200,22 @@ public class OAuthAuthorization implements Serializable{
         String apiKey    = args[1];
         String apiSecret = args[2];
         String redirectURI = args[3];
-    	int port = Integer.parseInt(args[4]);
-    	String storePath =args[5]+"/credential_storage";
         
+    	int port;
+    	if (args.length < 5) {
+    		port = 8085;
+    	}
+    	else {
+    		port = Integer.parseInt(args[4]);
+    	}
+    	
+    	Path storePath;
+    	if (args.length < 6) {
+    		storePath = DATA_STORE_DIR;
+    	}
+    	else {
+    		storePath = Path.of(args[5]);
+    	}
         try {
             Credential credentials = createCredentials(username, redirectURI, port, apiKey, apiSecret, storePath);
             
