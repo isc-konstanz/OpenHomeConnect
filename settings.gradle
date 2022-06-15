@@ -18,7 +18,6 @@
  * along with OpenHomeConnect.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-include 'api', 'bundle', 'bundle:demo'
+include 'api', 'bundle'
 
 project(':bundle').projectDir = file('bundles/openmuc')
-project(':bundle:demo').projectDir = file('bundles/openmuc/demo')
