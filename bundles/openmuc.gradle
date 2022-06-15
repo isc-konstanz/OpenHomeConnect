@@ -1,0 +1,26 @@
+repositories {
+    mavenCentral()
+    flatDir {
+        dirs rootDir.getPath() + "/build/libs/"
+    }
+}
+
+configurations.create("osgibundles")
+configurations.osgibundles.transitive = false;
+
+dependencies {
+    osgibundles group: "org.openmuc", name: "openmuc-driver-homeconnect", version: projectVersion
+}
+
+task cleanBundles(type: Delete) {
+    delete fileTree(rootDir.getPath() + '/framework/bundle') {
+        include 'openmuc-driver-homeconnect-*.jar'
+    }
+}
+
+task copyBundles(type: Copy) {
+    dependsOn javaProjects().build
+
+    from configurations.osgibundles;
+    into rootDir.getPath() + "/framework/bundle"
+}
