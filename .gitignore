@@ -43,3 +43,6 @@ local.properties
 build/
 /build/
 framework
+
+#VisualStudio
+.vs
