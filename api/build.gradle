@@ -38,7 +38,7 @@ dependencies {
     implementation group: 'com.google.api-client',           name: 'google-api-client-jackson2', version: '1.31.1'
 
     implementation group: 'com.squareup.okhttp3',            name: 'okhttp',                     version: '4.8.1'
-    implementation group: 'com.squareup.okhttp3',            name: 'okhttp-sse',                 version: '3.14.1'
+    implementation group: 'com.squareup.okhttp3',            name: 'okhttp-sse',                 version: '4.4.0'
 
     implementation group: 'org.eclipse.jdt',                 name: 'org.eclipse.jdt.annotation', version: '2.2.600'
     implementation group: 'org.eclipse.jetty',               name: 'jetty-server',               version: '9.4.31.v20200723'

@@ -30,6 +30,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -56,12 +57,17 @@ import com.homeconnect.client.model.ApiRequest;
 import com.homeconnect.client.model.AvailableProgram;
 import com.homeconnect.client.model.AvailableProgramOption;
 import com.homeconnect.client.model.Data;
+import com.homeconnect.client.model.Event;
+import com.homeconnect.client.model.EventHandling;
+import com.homeconnect.client.model.EventLevel;
+import com.homeconnect.client.model.EventType;
 import com.homeconnect.client.model.HomeAppliance;
 import com.homeconnect.client.model.HomeConnectRequest;
 import com.homeconnect.client.model.HomeConnectResponse;
 import com.homeconnect.client.model.Option;
 import com.homeconnect.client.model.Program;
 import com.homeconnect.data.Resource;
+import com.homeconnect.client.model.EventType;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -79,6 +85,11 @@ import okhttp3.ResponseBody;
 @NonNullByDefault
 public class HomeConnectApiClient {
 
+	public HomeConnectEventSourceClient eventClient;
+	private Queue<Event> eventQueue = new LinkedList<Event>();
+	private Queue<Event> eventsToDelete = new LinkedList<Event>();;
+	private Double lastEventValue = 0.0;
+	
     private static final String ACCEPT = "Accept";
     private static final String CONTENT_TYPE = "Content-Type";
     private static final String BSH_JSON_V1 = "application/vnd.bsh.sdk.v1+json";
@@ -87,6 +98,7 @@ public class HomeConnectApiClient {
     public static final int VALUE_TYPE_STRING = 0;
     public static final int VALUE_TYPE_INT = 1;
     public static final int VALUE_TYPE_BOOLEAN = 2;
+    public static final int VALUE_TYPE_DOUBLE = 3;
     
     private static final int COMMUNICATION_QUEUE_SIZE = 50;
 
@@ -357,6 +369,9 @@ public class HomeConnectApiClient {
 			return getSetting(haId, resource.getKey());
 		case STATUS:
 			return getStatus(haId, resource.getKey());
+		case EVENT:
+			return getEvent(haId, resource);
+	
 		default:
 			logger.warn("Wrong type configured for resource {}", resource);
 			throw new UnsupportedOperationException("Wrong type configured for resource: " + resource);
@@ -381,7 +396,8 @@ public class HomeConnectApiClient {
 			break;
 		case SETTINGS:
 			putSettings(haId, new Data(resource.getKey(), data, unit), resource.getValueType());
-			break;
+		case EVENT:
+			putSettings(haId, new Data(resource.getKey(), data, unit), resource.getValueType());
 		case STATUS:
 			break;
 		default:
@@ -698,6 +714,150 @@ public class HomeConnectApiClient {
         putData(haId, "/api/homeappliances/" + haId + "/settings/" + data.getName(), data, valueType);
     }
 
+    private Data getEvent(String haId, Resource resource) {
+    	int eventCount = 0;
+		
+ 		eventQueue = eventClient.getLatestEvents();
+ 		
+ 		for (Event apiEvent: eventQueue) {
+           
+ 			
+ 				if (apiEvent.getType().toString() != "STATUS" && apiEvent.getType().toString() != "EVENT" && apiEvent.getType().toString() != "NOTIFY") {
+	 				
+ 					eventsToDelete.add(apiEvent);
+	 				
+	 			}
+	 			
+	 			else if (apiEvent.getKey().equals(resource.getKey())) {
+	 				
+	 				eventCount++;
+	 				
+	 				if (resource.getValueType() == 1 || resource.getValueType() == 3){
+		 				
+		 				lastEventValue = Double.valueOf(apiEvent.getValue());
+		 			}
+		 			
+		 			if (resource.getValueType() == 2){
+		 				
+		 				if(apiEvent.getValue().toString() == "true" || apiEvent.getValue().toString().contains("1")) {
+		 					lastEventValue = 1.0;
+		 				}
+		 				else{
+		 					lastEventValue = 0.0;
+		 				}
+		 			}
+		 			
+	 			}
+ 			
+        }
+ 		
+ 		if (eventCount == 0) {
+ 			
+ 			Data status = null;
+ 			
+ 			if (resource.getKey().contains("Setting")) {
+ 				try {
+					status = getSetting(haId, resource.getKey());
+				} catch (HomeConnectException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+ 			}
+ 			else if (resource.getKey().contains("Status")) {
+ 				try {
+					status = getStatus(haId, resource.getKey());
+				} catch (HomeConnectException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+ 			}
+ 			
+ 			if (resource.getValueType() == 1){
+ 				
+ 				lastEventValue = Double.valueOf(status.getValueAsInt());
+ 			}
+ 			
+ 			if (resource.getValueType() == 2){
+ 				
+ 				if(status.getValueAsBoolean()) {
+ 					lastEventValue = 1.0;
+ 				}
+ 				else{
+ 					lastEventValue = 0.0;
+ 				}
+ 			}
+ 			
+ 			if (resource.getValueType() == 3){
+ 				
+ 				lastEventValue = status.getValueAsDouble();
+ 			}
+ 			
+ 			EventType event = EventType.valueOfType(resource.getType().toString());
+ 			
+ 			eventQueue.add(new Event(haId, event , resource.getKey(), null, null, null, null, null, lastEventValue.toString(), status.getUnit()));
+ 			
+ 		}
+ 		
+ 		else if(eventCount > 1) {
+ 			
+ 			for (Event apiEvent: eventQueue) {
+ 	           
+ 				if (apiEvent.getType().toString() == "STATUS" || apiEvent.getType().toString() == "EVENT" || apiEvent.getType().toString() == "NOTIFY") {
+	 				
+ 					if (apiEvent.getKey().equals(resource.getKey()) && eventCount > 1) {
+		 				
+		 				eventsToDelete.add(apiEvent);
+		 				
+		 				eventCount--;
+		 				
+		 			}
+	 				
+	 			}
+ 				
+	        }
+ 			
+ 		}
+ 		if (eventsToDelete.isEmpty() != true) {
+ 			
+ 			for (Event apiEventToDelete: eventsToDelete) {
+	 			
+	 			eventQueue.remove(apiEventToDelete);
+	 			
+	 		}
+ 			eventsToDelete.clear();
+ 		}
+ 		
+ 		if (resource.getKey().contains("Status")) {
+ 			
+ 			if (lastEventValue < 0 ) {
+    			
+    			lastEventValue = (((lastEventValue/128.0)*64.0) + 64.0);
+    			
+    		}
+    		else {
+    			
+    			lastEventValue = ((lastEventValue/128.0)*64.0) - 64.0;
+    			
+    		}
+	 		
+	 		lastEventValue = lastEventValue * (-1.0);
+			}
+		
+ 		if (resource.getValueType() == 2) {
+ 			
+ 			if(lastEventValue == 1.0) {
+ 				return new Data(null,"true","Boolean");
+ 			}
+ 			else {
+ 				return new Data(null,"false","Boolean");
+ 			}
+ 			
+ 		}
+ 		else {
+ 			return new Data(null,lastEventValue.toString(),"Double");
+ 		}
+    }
+    
     private Data getStatus(String haId, String status)
             throws HomeConnectException {
         return getData(haId, "/api/homeappliances/" + haId + "/status/" + status);
@@ -834,7 +994,7 @@ public class HomeConnectApiClient {
             }
         }
 
-        if (data.getUnit() != null) {
+        if (data.getUnit() != null && data.getUnit() != "") {
             innerObject.addProperty("unit", data.getUnit());
         }
 

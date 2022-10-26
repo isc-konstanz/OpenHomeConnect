@@ -54,7 +54,9 @@ public class Constants {
     public static final String SETTINGS_FREEZER_SUPER_MODE = "Refrigeration.FridgeFreezer.Setting.SuperModeFreezer";
     public static final String SETTINGS_FRIDGE_SUPER_MODE = "Refrigeration.FridgeFreezer.Setting.SuperModeRefrigerator";
     public static final String SETTINGS_FRIDGE_ECO_MODE = "Refrigeration.Common.Setting.EcoMode";
-
+    public static final String EVENT_FRIDGE_MEASURED_TEMPERATURE = "Refrigeration.Common.Status.Refrigerator.MeasuredTemperature";
+    public static final String EVENT_FREEZER_MEASURED_TEMPERATURE = "Refrigeration.Common.Status.Freezer.MeasuredTemperature";
+    
     public static final String NONE = "";
 
     public static final String OPTION_FINISH_IN_RELATIVE = "BSH.Common.Option.FinishInRelative";

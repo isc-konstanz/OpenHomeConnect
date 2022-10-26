@@ -24,6 +24,9 @@ import static org.openmuc.framework.config.option.annotation.OptionType.ADDRESS;
 
 import java.text.MessageFormat;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.openmuc.framework.config.ArgumentSyntaxException;
 import org.openmuc.framework.config.option.annotation.Option;
@@ -42,8 +45,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.homeconnect.client.HomeConnectApiClient;
+import com.homeconnect.client.HomeConnectEventSourceClient;
 import com.homeconnect.client.exception.HomeConnectException;
 import com.homeconnect.client.exception.InvalidScopeOrIdException;
+import com.homeconnect.client.listener.FridgeEventListener;
+import com.homeconnect.client.listener.HomeConnectEventListener;
+import com.homeconnect.client.model.Data;
+import com.homeconnect.client.model.Event;
 
 
 @Syntax(separator = "@")
@@ -66,12 +74,21 @@ public class HomeConnection extends DriverDevice {
     private String apiUrl = API_BASE_URL;
 
     private HomeConnectApiClient client;
-
+    
+    private HomeConnectEventListener listener;
+    
+    boolean listenerRegistered = false;
 
     @Connect
     public void connect() throws ArgumentSyntaxException, ConnectionException {
-        try {
-            client = new HomeConnectApiClient(apiUrl, username);
+    	//EventStuff
+    	ScheduledExecutorService threadService = Executors.newScheduledThreadPool(1);
+    	
+    	try {
+            
+    		client = new HomeConnectApiClient(apiUrl, username);
+            
+            client.eventClient = new HomeConnectEventSourceClient(apiUrl, username, threadService);
             
         } catch (Exception e) {
             throw new ConnectionException(e);
@@ -88,6 +105,28 @@ public class HomeConnection extends DriverDevice {
     public void read(List<HomeConnectChannel> channels, String samplingGroup) 
     		throws ConnectionException {
         long samplingTime = System.currentTimeMillis();
+   
+        if(listenerRegistered == false) {
+        	
+        	try {
+            	
+            	listener = new FridgeEventListener();
+            	
+        		for (HomeConnectChannel channel : channels) {
+        			
+        			client.eventClient.registerEventListener(channel.getHomeApplianceId(), listener);
+        			
+        			listenerRegistered = true;
+        			
+        		}
+    		} catch (Exception e) {
+    			// TODO Auto-generated catch block
+    			listenerRegistered = false;
+    			e.printStackTrace();
+    		}
+        	
+        }
+        
         try {
 			for (HomeConnectChannel channel : channels) {
 				logger.debug("Read channel \"{}\": {}@{}", channel.getId(), channel.getResource(),
