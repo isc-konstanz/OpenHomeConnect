@@ -89,6 +89,7 @@ public class HomeConnectApiClient {
 	private Queue<Event> eventQueue = new LinkedList<Event>();
 	private Queue<Event> eventsToDelete = new LinkedList<Event>();;
 	private Double lastEventValue = 0.0;
+	private long timestampAlive = 0;
 	
     private static final String ACCEPT = "Accept";
     private static final String CONTENT_TYPE = "Content-Type";
@@ -111,7 +112,7 @@ public class HomeConnectApiClient {
     private final Queue<ApiRequest> communicationQueue;
 
     private final Map<String, List<AvailableProgramOption>> availableProgramOptionsCache;
-
+	
     public HomeConnectApiClient(String apiUrl, String username) throws AuthorizationException {
         this(apiUrl, OAuthAuthorization.getCredentials(username), null);
     }
@@ -351,7 +352,7 @@ public class HomeConnectApiClient {
         putSettings(haId, new Data("BSH.Common.Setting.PowerState", state, null));
     }
 
-    public Data get(String haId, Resource resource)
+    public Data get(String haId, Resource resource, long timestamp)
             throws UnsupportedOperationException, HomeConnectException, InvalidScopeOrIdException {
 		switch (resource.getType()) {
 		case PROGRAM_ACTIVE:
@@ -370,7 +371,7 @@ public class HomeConnectApiClient {
 		case STATUS:
 			return getStatus(haId, resource.getKey());
 		case EVENT:
-			return getEvent(haId, resource);
+			return getEvent(haId, resource, timestamp);
 	
 		default:
 			logger.warn("Wrong type configured for resource {}", resource);
@@ -714,7 +715,8 @@ public class HomeConnectApiClient {
         putData(haId, "/api/homeappliances/" + haId + "/settings/" + data.getName(), data, valueType);
     }
 
-    private Data getEvent(String haId, Resource resource) {
+    private Data getEvent(String haId, Resource resource, long timestamp) 
+    		throws HomeConnectException{
     	int eventCount = 0;
 		
  		eventQueue = eventClient.getLatestEvents();
@@ -722,32 +724,37 @@ public class HomeConnectApiClient {
  		for (Event apiEvent: eventQueue) {
            
  			
- 				if (apiEvent.getType().toString() != "STATUS" && apiEvent.getType().toString() != "EVENT" && apiEvent.getType().toString() != "NOTIFY") {
+			if (apiEvent.getType().toString() != "STATUS" && apiEvent.getType().toString() != "EVENT" && apiEvent.getType().toString() != "NOTIFY") {
+ 				
+				if (apiEvent.getType().toString() == "KEEP_ALIVE" ) {
+					
+					timestampAlive = timestamp;
+				}
+				
+				eventsToDelete.add(apiEvent);
+ 				
+ 			}
+ 			
+ 			else if (apiEvent.getKey().equals(resource.getKey())) {
+ 				
+ 				eventCount++;
+ 				
+ 				if (resource.getValueType() == 1 || resource.getValueType() == 3){
 	 				
- 					eventsToDelete.add(apiEvent);
-	 				
+	 				lastEventValue = Double.valueOf(apiEvent.getValue());
 	 			}
 	 			
-	 			else if (apiEvent.getKey().equals(resource.getKey())) {
+	 			if (resource.getValueType() == 2){
 	 				
-	 				eventCount++;
-	 				
-	 				if (resource.getValueType() == 1 || resource.getValueType() == 3){
-		 				
-		 				lastEventValue = Double.valueOf(apiEvent.getValue());
-		 			}
-		 			
-		 			if (resource.getValueType() == 2){
-		 				
-		 				if(apiEvent.getValue().toString() == "true" || apiEvent.getValue().toString().contains("1")) {
-		 					lastEventValue = 1.0;
-		 				}
-		 				else{
-		 					lastEventValue = 0.0;
-		 				}
-		 			}
-		 			
+	 				if(apiEvent.getValue().toString() == "true" || apiEvent.getValue().toString().contains("1")) {
+	 					lastEventValue = 1.0;
+	 				}
+	 				else{
+	 					lastEventValue = 0.0;
+	 				}
 	 			}
+	 			
+ 			}
  			
         }
  		
@@ -756,20 +763,13 @@ public class HomeConnectApiClient {
  			Data status = null;
  			
  			if (resource.getKey().contains("Setting")) {
- 				try {
-					status = getSetting(haId, resource.getKey());
-				} catch (HomeConnectException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+ 				
+				status = getSetting(haId, resource.getKey());
+				
  			}
  			else if (resource.getKey().contains("Status")) {
- 				try {
-					status = getStatus(haId, resource.getKey());
-				} catch (HomeConnectException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+ 
+				status = getStatus(haId, resource.getKey());
  			}
  			
  			if (resource.getValueType() == 1){
@@ -829,20 +829,15 @@ public class HomeConnectApiClient {
  		
  		if (resource.getKey().contains("Status")) {
  			
- 			if (lastEventValue < 0 ) {
-    			
-    			lastEventValue = (((lastEventValue/128.0)*64.0) + 64.0);
-    			
-    		}
-    		else {
-    			
-    			lastEventValue = ((lastEventValue/128.0)*64.0) - 64.0;
-    			
-    		}
-	 		
-	 		lastEventValue = lastEventValue * (-1.0);
-			}
+ 			lastEventValue = lastEventValue/8;
+ 			
+		}
 		
+		if (220000 <= timestamp - timestampAlive && timestampAlive != 0) {
+			
+			throw new HomeConnectException("client disconnected!");
+ 		}
+ 		
  		if (resource.getValueType() == 2) {
  			
  			if(lastEventValue == 1.0) {

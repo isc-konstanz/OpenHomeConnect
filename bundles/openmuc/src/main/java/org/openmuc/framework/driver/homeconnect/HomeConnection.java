@@ -132,7 +132,7 @@ public class HomeConnection extends DriverDevice {
 				logger.debug("Read channel \"{}\": {}@{}", channel.getId(), channel.getResource(),
 						channel.getHomeApplianceId());
 				try {
-					channel.setData(client.get(channel.getHomeApplianceId(), channel.getResource()), samplingTime);
+					channel.setData(client.get(channel.getHomeApplianceId(), channel.getResource(), samplingTime), samplingTime);
 					logger.trace("Read value from channel \"{}\": {}", channel.getId(), channel.getRecord());       
 					
 				} catch (UnsupportedOperationException e) {
@@ -144,6 +144,10 @@ public class HomeConnection extends DriverDevice {
 			    }
 			}
         } catch(HomeConnectException e) {
+        	
+        	client = null;
+        	System.gc();
+        	
         	throw new ConnectionException(
         			MessageFormat.format("Error reading channel! {0}", e.getMessage()));
         }
