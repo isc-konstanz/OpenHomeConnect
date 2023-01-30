@@ -4,7 +4,6 @@ import com.homeconnect.client.model.Event;
 
 public class FridgeEventListener implements HomeConnectEventListener{
 
-	
 	@Override
 	public void onEvent(Event event) {
 		
@@ -12,5 +11,5 @@ public class FridgeEventListener implements HomeConnectEventListener{
 		System.out.println(event.toString());
 		
 	}
-
+	
 }

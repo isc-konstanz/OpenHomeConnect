@@ -24,8 +24,8 @@ import org.eclipse.jdt.annotation.Nullable;
 import com.homeconnect.client.HomeConnectApiClient;
 
 public enum Resource {
-
-    FREEZER_SETPOINT_TEMPERATURE(Type.EVENT, Constants.SETTINGS_FREEZER_SETPOINT_TEMPERATURE,
+ 
+	FREEZER_SETPOINT_TEMPERATURE(Type.EVENT, Constants.SETTINGS_FREEZER_SETPOINT_TEMPERATURE,
     		HomeConnectApiClient.VALUE_TYPE_INT),
     FRIDGE_SETPOINT_TEMPERATURE(Type.EVENT, Constants.SETTINGS_FRIDGE_SETPOINT_TEMPERATURE, 
     		HomeConnectApiClient.VALUE_TYPE_INT),
@@ -39,15 +39,31 @@ public enum Resource {
     	    		HomeConnectApiClient.VALUE_TYPE_DOUBLE),
     FREEZER_MEASURED_TEMPERATURE(Type.EVENT, Constants.EVENT_FREEZER_MEASURED_TEMPERATURE, 
     		HomeConnectApiClient.VALUE_TYPE_DOUBLE),
-
-    WASHER_ACTIVE_PROGRAM(Type.PROGRAM_ACTIVE, Constants.NONE, 
-    		HomeConnectApiClient.VALUE_TYPE_BOOLEAN),
-	WASHER_SELECTED_PROGRAM(Type.PROGRAM_SELECTED, Constants.NONE, 
+	
+    WASHER_ACTIVE_PROGRAM(Type.EVENT, Constants.EVENT_ACTIVE, 
+    		HomeConnectApiClient.VALUE_TYPE_STRING),
+    WASHER_OPERATION_STATE(Type.EVENT, Constants.EVENT_STATUS_OPERATION_STATE, 
+    		HomeConnectApiClient.VALUE_TYPE_STRING),
+    WASHER_PROGRAM_PROGRESS(Type.EVENT, Constants.OPTION_TOTAL_PROGRAM_PROGRESS, 
+    		HomeConnectApiClient.VALUE_TYPE_INT),
+	WASHER_SELECTED_PROGRAM(Type.EVENT, Constants.EVENT_PROGRAM, 
 			HomeConnectApiClient.VALUE_TYPE_STRING),
-	WASHER_TIME_LEFT(Type.PROGRAM_ACTIVE_OPTIONS, Constants.OPTION_ESTIMATED_TOTAL_PROGRAM_TIME, 
+	WASHER_TIME_LEFT(Type.EVENT, Constants.OPTION_ESTIMATED_TOTAL_PROGRAM_TIME, 
 			HomeConnectApiClient.VALUE_TYPE_INT),
-	WASHER_END_TIME(Type.PROGRAM_ACTIVE_OPTIONS, Constants.OPTION_FINISH_IN_RELATIVE, 
-			HomeConnectApiClient.VALUE_TYPE_INT);
+	WASHER_END_TIME(Type.EVENT, Constants.EVENT_OPTION_FINISH_IN_RELATIVE, 
+			HomeConnectApiClient.VALUE_TYPE_LONG),
+	
+	DISHWASHER_ACTIVE_PROGRAM(Type.PROGRAM_ACTIVE, Constants.NONE, 
+    		HomeConnectApiClient.VALUE_TYPE_BOOLEAN),
+	DISHWASHER_PROGRAM_PROGRESS(Type.PROGRAM_ACTIVE_OPTIONS, Constants.OPTION_TOTAL_PROGRAM_PROGRESS, 
+    		HomeConnectApiClient.VALUE_TYPE_INT),
+	DISHWASHER_SELECTED_PROGRAM(Type.PROGRAM_SELECTED, Constants.NONE, 
+			HomeConnectApiClient.VALUE_TYPE_STRING),
+	DISHWASHER_TIME_LEFT(Type.PROGRAM_ACTIVE_OPTIONS, Constants.OPTION_ESTIMATED_TOTAL_PROGRAM_TIME, 
+			HomeConnectApiClient.VALUE_TYPE_INT),
+	DISHWASHER_START_PROGRAM_TIME(Type.PROGRAM_ACTIVE_OPTIONS, Constants.OPTION_START_IN_RELATIVE, 
+			HomeConnectApiClient.VALUE_TYPE_LONG);
+	
 
     public static enum Type {
         SETTINGS,
@@ -79,6 +95,18 @@ public enum Resource {
 
     public int getValueType() {
     	return this.valueType;
+    }
+    
+    public String getValueTypeAsString() {
+    	String valueType = "String";
+		switch(this.getValueType()) {
+		case 0: valueType = "String";
+		case 1: valueType = "Integer";
+		case 2: valueType = "Boolean";
+		case 3: valueType = "Double";
+		case 4: valueType = "Long";
+		}
+		return valueType;
     }
     
     public static @Nullable Resource valueOfKey(String key) {

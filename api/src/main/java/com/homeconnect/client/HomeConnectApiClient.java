@@ -66,6 +66,7 @@ import com.homeconnect.client.model.HomeConnectRequest;
 import com.homeconnect.client.model.HomeConnectResponse;
 import com.homeconnect.client.model.Option;
 import com.homeconnect.client.model.Program;
+import com.homeconnect.data.Constants;
 import com.homeconnect.data.Resource;
 import com.homeconnect.client.model.EventType;
 
@@ -88,7 +89,6 @@ public class HomeConnectApiClient {
 	public HomeConnectEventSourceClient eventClient;
 	private Queue<Event> eventQueue = new LinkedList<Event>();
 	private Queue<Event> eventsToDelete = new LinkedList<Event>();;
-	private Double lastEventValue = 0.0;
 	private long timestampAlive = 0;
 	
     private static final String ACCEPT = "Accept";
@@ -100,6 +100,7 @@ public class HomeConnectApiClient {
     public static final int VALUE_TYPE_INT = 1;
     public static final int VALUE_TYPE_BOOLEAN = 2;
     public static final int VALUE_TYPE_DOUBLE = 3;
+    public static final int VALUE_TYPE_LONG = 4;
     
     private static final int COMMUNICATION_QUEUE_SIZE = 50;
 
@@ -365,7 +366,11 @@ public class HomeConnectApiClient {
 			Program program = getSelectedProgram(haId);
 			return new Data (program.getKey(), program.getKey(), "String");
 		case PROGRAM_ACTIVE_OPTIONS:
-            return getOptionActiveProgram(haId, resource.getKey());
+			if(getActiveProgram(haId) == null){
+				return new Data(resource.getKey(), "0", resource.getValueTypeAsString());
+			} else {
+				return getOptionActiveProgram(haId, resource.getKey());
+			}
 		case SETTINGS:
 			return getSetting(haId, resource.getKey());
 		case STATUS:
@@ -394,6 +399,7 @@ public class HomeConnectApiClient {
 		case PROGRAM_SELECTED:
 			break;
 		case PROGRAM_ACTIVE_OPTIONS:
+			putOptionActiveProgram(haId, new Data(resource.getKey(), data, unit), resource.getValueType());
 			break;
 		case SETTINGS:
 			putSettings(haId, new Data(resource.getKey(), data, unit), resource.getValueType());
@@ -405,6 +411,30 @@ public class HomeConnectApiClient {
 			logger.warn("Wrong type configured for resource {}", resource);
 			throw new UnsupportedOperationException("Wrong type configured for resource: " + resource);
 		}
+    }
+    
+    private Data getFinishInRelative(String haId, String option) throws HomeConnectException{
+    	
+    	Data data = getStatus(haId, "BSH.Common.Status.OperationState");
+    	
+    	if (data.getValue() == "BSH.Common.EnumType.OperationState.DelayedStart" || data.getValue() =="BSH.Common.EnumType.OperationState.Pause" || data.getValue() == "BSH.Common.EnumType.OperationState.Run") {
+    		
+    		data = getData(haId, "/api/homeappliances/" + haId + "/programs/active/options/" + option);
+    	}
+    	
+    	else {
+    		data = new Data("No delayed start", "0", "LONG");
+    	}
+    	
+		long finishTime = 0;
+				
+		if (data.getName() != "No delayed start") {
+			finishTime = data.getValueAsLong() * 1000 + System.currentTimeMillis();
+		}
+		
+		
+		return  new Data(data.getName(),String.valueOf(finishTime),data.getUnit());
+    	
     }
     
 //    /**
@@ -697,7 +727,17 @@ public class HomeConnectApiClient {
 
     private Data getOptionActiveProgram(String haId, String option) 
     		throws HomeConnectException {
-    	return getData(haId, "/api/homeappliances/" + haId +"/programs/active/options/" + option);
+    	
+    	Data data = null;
+    	
+    	if (option == "BSH.Common.Option.FinishInRelative") {
+    		data = getFinishInRelative(haId,option);
+    	}
+    	else {
+    		data = getData(haId, "/api/homeappliances/" + haId + "/programs/active/options/" + option);
+    	}
+		
+    	return data;
     }
 
     private Data getSetting(String haId, String setting)
@@ -710,20 +750,30 @@ public class HomeConnectApiClient {
         putSettings(haId, data, VALUE_TYPE_STRING);
     }
 
+    private void putOptionActiveProgram(String haId, Data data, int valueType)
+            throws HomeConnectException {
+        putData(haId, "/api/homeappliances/" + haId + "/programs/active/options/" + data.getName(), data, valueType);
+    }
+    
     private void putSettings(String haId, Data data, int valueType)
             throws HomeConnectException {
         putData(haId, "/api/homeappliances/" + haId + "/settings/" + data.getName(), data, valueType);
     }
 
-    private Data getEvent(String haId, Resource resource, long timestamp) 
-    		throws HomeConnectException{
+    private Data getEvent(String haId, Resource resource, long timestamp)
+    	 throws HomeConnectException {
+    	
     	int eventCount = 0;
+    	String lastEventValue = "0.0";
 		
+    	if (eventQueue.size() > 20) {
+    		eventQueue.clear();
+    	}
+    	
  		eventQueue = eventClient.getLatestEvents();
- 		
+ 			
  		for (Event apiEvent: eventQueue) {
            
- 			
 			if (apiEvent.getType().toString() != "STATUS" && apiEvent.getType().toString() != "EVENT" && apiEvent.getType().toString() != "NOTIFY") {
  				
 				if (apiEvent.getType().toString() == "KEEP_ALIVE" ) {
@@ -734,26 +784,21 @@ public class HomeConnectApiClient {
 				eventsToDelete.add(apiEvent);
  				
  			}
+			
+			else if(apiEvent.getType().toString() == "CONNECTED") {
+				
+				eventQueue.clear();
+				eventCount = 0;
+				break;
+				
+			}
  			
  			else if (apiEvent.getKey().equals(resource.getKey())) {
  				
  				eventCount++;
  				
- 				if (resource.getValueType() == 1 || resource.getValueType() == 3){
-	 				
-	 				lastEventValue = Double.valueOf(apiEvent.getValue());
-	 			}
-	 			
-	 			if (resource.getValueType() == 2){
-	 				
-	 				if(apiEvent.getValue().toString() == "true" || apiEvent.getValue().toString().contains("1")) {
-	 					lastEventValue = 1.0;
-	 				}
-	 				else{
-	 					lastEventValue = 0.0;
-	 				}
-	 			}
-	 			
+ 				lastEventValue = apiEvent.getValue();
+ 			
  			}
  			
         }
@@ -761,36 +806,51 @@ public class HomeConnectApiClient {
  		if (eventCount == 0) {
  			
  			Data status = null;
- 			
- 			if (resource.getKey().contains("Setting")) {
- 				
-				status = getSetting(haId, resource.getKey());
-				
+ 			try {
+	 			if (resource.getKey().contains("Setting")) {
+	 				
+					status = getSetting(haId, resource.getKey());
+					
+	 			}
+	 			else if (resource.getKey().contains("Status")) {
+	 
+					status = getStatus(haId, resource.getKey());
+	 			}
+	 			else if (resource.getKey().contains("Option")) {
+	 				if(getActiveProgram(haId) == null){
+	 					status = new Data(resource.getKey(), "0", resource.getValueTypeAsString());
+	 	 			} else {
+	 					status = getOptionActiveProgram(haId, resource.getKey());
+	 				}
+	 			}
+	 			else if (resource.getKey() == Constants.EVENT_PROGRAM) {
+	 				Program program = getSelectedProgram(haId);
+	 				status = new Data (program.getKey(), program.getKey(), "String");
+	 			}else {
+	 				
+	 				if(getActiveProgram(haId) == null){
+	 					status = new Data(resource.getKey(), "false", "boolean");
+	 				} else {
+	 					status = new Data(resource.getKey(), "true", "boolean");
+	 				}
+	 			}
+	 			
  			}
- 			else if (resource.getKey().contains("Status")) {
- 
-				status = getStatus(haId, resource.getKey());
- 			}
- 			
- 			if (resource.getValueType() == 1){
+ 			catch(HomeConnectException e){
  				
- 				lastEventValue = Double.valueOf(status.getValueAsInt());
- 			}
- 			
- 			if (resource.getValueType() == 2){
- 				
- 				if(status.getValueAsBoolean()) {
- 					lastEventValue = 1.0;
+ 				if (e.getMessage().contains("HomeAppliance is offline")){
+ 					
+ 					if (resource.getValueType() == 0){
+ 						status = new Data(resource.getKey(),"HomeAppliance is offline", resource.getValueTypeAsString());
+ 					}
+ 					else {
+ 						status = new Data(resource.getKey(),"409", resource.getValueTypeAsString());
+ 					}
+ 					
  				}
- 				else{
- 					lastEventValue = 0.0;
- 				}
  			}
  			
- 			if (resource.getValueType() == 3){
- 				
- 				lastEventValue = status.getValueAsDouble();
- 			}
+ 			lastEventValue = status.getValue();
  			
  			EventType event = EventType.valueOfType(resource.getType().toString());
  			
@@ -821,36 +881,38 @@ public class HomeConnectApiClient {
  			
  			for (Event apiEventToDelete: eventsToDelete) {
 	 			
+ 				if (apiEventToDelete.getType().toString() == "DISCONNECTED") {
+ 					eventQueue.clear();
+ 					eventsToDelete.clear();
+ 					break;
+ 				}
+ 				
 	 			eventQueue.remove(apiEventToDelete);
 	 			
 	 		}
  			eventsToDelete.clear();
  		}
  		
- 		if (resource.getKey().contains("Status")) {
+ 		if (resource.getKey() == Constants.EVENT_FRIDGE_MEASURED_TEMPERATURE || resource.getKey() == Constants.EVENT_FREEZER_MEASURED_TEMPERATURE) {
  			
- 			lastEventValue = lastEventValue/8;
- 			
+ 			lastEventValue = String.valueOf(Double.valueOf(lastEventValue)/8);
+ 		
 		}
-		
-		if (220000 <= timestamp - timestampAlive && timestampAlive != 0) {
+ 		if (resource.getKey() == Constants.EVENT_OPTION_FINISH_IN_RELATIVE && lastEventValue!= "0") {
+ 			lastEventValue = String.valueOf(Double.valueOf(lastEventValue) * 1000 + System.currentTimeMillis());
+ 		}
+		//220000 = 3,66min
+		if (60000 <= timestamp - timestampAlive && timestampAlive != 0) {
 			
 			throw new HomeConnectException("client disconnected!");
  		}
  		
- 		if (resource.getValueType() == 2) {
- 			
- 			if(lastEventValue == 1.0) {
- 				return new Data(null,"true","Boolean");
- 			}
- 			else {
- 				return new Data(null,"false","Boolean");
- 			}
- 			
+ 		if (lastEventValue == null ) {
+ 			lastEventValue = "null";
  		}
- 		else {
- 			return new Data(null,lastEventValue.toString(),"Double");
- 		}
+		
+ 		return new Data(null,lastEventValue, resource.getValueTypeAsString());
+ 		
     }
     
     private Data getStatus(String haId, String status)

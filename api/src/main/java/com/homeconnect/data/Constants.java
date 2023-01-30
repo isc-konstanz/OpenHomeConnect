@@ -58,9 +58,15 @@ public class Constants {
     public static final String EVENT_FREEZER_MEASURED_TEMPERATURE = "Refrigeration.Common.Status.Freezer.MeasuredTemperature";
     
     public static final String NONE = "";
+    public static final String EVENT_PROGRAM = "BSH.Common.Root.SelectedProgram";
+    public static final String EVENT_ACTIVE = "BSH.Common.Root.ActiveProgram";
 
-    public static final String OPTION_FINISH_IN_RELATIVE = "BSH.Common.Option.FinishInRelative";
+    public static final String EVENT_OPTION_FINISH_IN_RELATIVE = "BSH.Common.Option.FinishInRelative";
+    public static final String EVENT_STATUS_OPERATION_STATE = "BSH.Common.Status.OperationState";
     public static final String OPTION_ESTIMATED_TOTAL_PROGRAM_TIME ="BSH.Common.Option.RemainingProgramTime";
+    public static final String OPTION_TOTAL_PROGRAM_PROGRESS ="BSH.Common.Option.ProgramProgress";
+    
+    public static final String OPTION_START_IN_RELATIVE ="BSH.Common.Option.StartInRelative";
 
 //    // SSE Event types
 //    public static final String EVENT_ELAPSED_PROGRAM_TIME = "BSH.Common.Option.ElapsedProgramTime";
