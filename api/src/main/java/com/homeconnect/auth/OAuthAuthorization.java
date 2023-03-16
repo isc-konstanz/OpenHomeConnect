@@ -25,10 +25,7 @@ import static com.homeconnect.data.Constants.OAUTH_SCOPE;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
 import com.google.api.client.auth.oauth2.BearerToken;
@@ -43,12 +40,8 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.DataStoreFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
-import com.homeconnect.client.HomeConnectApiClient;
-import com.homeconnect.client.HomeConnectEventSourceClient;
 import com.homeconnect.client.exception.AuthorizationException;
 import com.homeconnect.client.exception.HomeConnectException;
-import com.homeconnect.client.listener.FridgeEventListener;
-import com.homeconnect.client.listener.HomeConnectEventListener;
 
 public class OAuthAuthorization implements Serializable{
     private static final long serialVersionUID = 1L;
@@ -203,17 +196,28 @@ public class OAuthAuthorization implements Serializable{
      * @throws HomeConnectException Exception in HomeConnect interface
      */
     public static void main(String[] args) throws HomeConnectException {
-    	String username  = "openmuc";
-        String apiKey    = "0A5DE8B1D61C98BB4727984F3EF94999C31293283C782CA9433F55303B9BE839";
-        String apiSecret = "32E21C4BA35C85246E104649577616991744761D0B00A4214B51C9EFCB4509CC";
-        String redirectURI = "192.168.1.73";//"192.168.178.72";//"192.168.178.72";
-    	int port = 8085;
-    	Path storePath = Paths.get("C:\\Users\\Patrick\\.store\\credential_storage");
-    	String haId = "SIEMENS-HCS05FRF1-5BB374BF153A";//"BOSCH-WAV28M90-68A40E549106";//"GAGGENAU-KIF86GGBASE-68A40E27B7E5";
+        String username  = args[0];
+        String apiKey    = args[1];
+        String apiSecret = args[2];
+        String redirectURI = args[3];
         
-    	Credential credentials = createCredentials(username, redirectURI, port, apiKey, apiSecret, storePath);
+    	int port;
+    	if (args.length < 5) {
+    		port = 8085;
+    	}
+    	else {
+    		port = Integer.parseInt(args[4]);
+    	}
     	
-    	try {  
+    	Path storePath;
+    	if (args.length < 6) {
+    		storePath = DATA_STORE_DIR;
+    	}
+    	else {
+    		storePath = Path.of(args[5]);
+    	}
+        try {
+            Credential credentials = createCredentials(username, redirectURI, port, apiKey, apiSecret, storePath);
             
             /**Check if authorization worked.*/
             if (credentials != null) {
@@ -223,54 +227,9 @@ public class OAuthAuthorization implements Serializable{
             System.out.println("API KEY: "      + apiKey + "\n");
             System.out.println("API SECRET: "   + apiSecret + "\n");
             
-    	} catch (Exception e) {
+        } catch (Exception e) {
             System.err.println("Authorization not succesfull: " + e.getMessage());
-    	}
-    	
-    	
-    	
-    	HomeConnectApiClient client = new HomeConnectApiClient("https://api.home-connect.com", username);
-    	
-    	//EventStuff
-    	ScheduledExecutorService threadService = Executors.newScheduledThreadPool(1);
-    	
-    	HomeConnectEventListener listener = new FridgeEventListener();
-    	
-    	HomeConnectEventSourceClient eventClient = new HomeConnectEventSourceClient("https://api.home-connect.com", username, threadService);
- 
-    	try {
-			eventClient.registerEventListener(haId, listener);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-    	
-   
-    	System.out.println(client.getHomeAppliances());
-    	
-    	/*
-    	System.out.println(client.getSetting(haId, "Refrigeration.FridgeFreezer.Setting.SetpointTemperatureRefrigerator"));
-
-    	ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
-        
-    	HomeConnectEventSourceClient eventClient = new HomeConnectEventSourceClient("https://simulator.home-connect.com", credentials, scheduler, null);
-    	
-    	try {
-    		eventClient.registerEventListener(haId, null);
-    	} catch (Exception e) {
-    	   System.out.println("Failure");
-		e.printStackTrace();
-    	}
-        
-        */
-        
-    	while(true) {
-    		
-    		
-    	}
-        
-        
-   
+        }
     }
 
 }
