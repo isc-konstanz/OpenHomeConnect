@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
 
 import com.homeconnect.client.HomeConnectApiClient;
 import com.homeconnect.client.HomeConnectEventSourceClient;
+import com.homeconnect.client.exception.AuthorizationException;
 import com.homeconnect.client.exception.HomeConnectException;
 import com.homeconnect.client.exception.InvalidScopeOrIdException;
 import com.homeconnect.client.listener.FridgeEventListener;
@@ -75,20 +76,17 @@ public class HomeConnection extends DriverDevice {
 
     private HomeConnectApiClient client;
     
-    private HomeConnectEventListener listener;
+    private HomeConnectListener homeconnectListener;
     
-    boolean listenerRegistered = false;
 
     @Connect
     public void connect() throws ArgumentSyntaxException, ConnectionException {
-    	//EventStuff
-    	ScheduledExecutorService threadService = Executors.newScheduledThreadPool(1);
     	
     	try {
             
-    		client = new HomeConnectApiClient(apiUrl, username);
+            client =  new HomeConnectApiClient(apiUrl, username);
             
-            client.eventClient = new HomeConnectEventSourceClient(apiUrl, username, threadService);
+            client.getHomeAppliance(apiUrl);
             
         } catch (Exception e) {
             throw new ConnectionException(e);
@@ -96,9 +94,42 @@ public class HomeConnection extends DriverDevice {
     }
 
     @Listen
-    public void registerEvents(List<HomeConnectChannel> containers, RecordsReceivedListener listener) 
+    public void registerEvents(List<HomeConnectChannel> channels, RecordsReceivedListener listener) 
     		throws ConnectionException {
-    	throw new UnsupportedOperationException();
+    	
+    		ScheduledExecutorService threadService = Executors.newScheduledThreadPool(1);
+    	
+			try {
+				
+				client.eventClient = new HomeConnectEventSourceClient(apiUrl, username, threadService);
+			
+			} catch (Exception e) {
+				throw new ConnectionException(e);
+			}
+		
+			homeconnectListener = new HomeConnectListener(this, client,channels, listener);
+			
+			for (HomeConnectChannel channel : channels) {
+				
+				if (channel.getTaskContainer().getChannel().isListening()) {
+					
+					try {
+						
+						client.eventClient.registerEventListener(channel.getHomeApplianceId(), homeconnectListener);
+						
+					} catch (Exception e) {
+						
+						client = null;
+						homeconnectListener = null;
+			        	System.gc();
+						
+						throw new ConnectionException(MessageFormat.format("Unable to Register Channel with following ID: {0}", channel.getId()," ! {0}",e.getMessage()));
+						
+					}
+				}
+			}
+			
+    		homeconnectListener.start();
     }
 
     @Read
@@ -106,27 +137,6 @@ public class HomeConnection extends DriverDevice {
     		throws ConnectionException {
         long samplingTime = System.currentTimeMillis();
    
-        if(listenerRegistered == false) {
-        	
-        	try {
-            	
-            	listener = new FridgeEventListener();
-            	
-        		for (HomeConnectChannel channel : channels) {
-        			
-        			client.eventClient.registerEventListener(channel.getHomeApplianceId(), listener);
-        			
-        			listenerRegistered = true;
-        			
-        		}
-    		} catch (Exception e) {
-    			// TODO Auto-generated catch block
-    			listenerRegistered = false;
-    			e.printStackTrace();
-    		}
-        	
-        }
-        
         try {
 			for (HomeConnectChannel channel : channels) {
 				logger.debug("Read channel \"{}\": {}@{}", channel.getId(), channel.getResource(),
@@ -146,6 +156,7 @@ public class HomeConnection extends DriverDevice {
         } catch(HomeConnectException e) {
         	
         	client = null;
+        	homeconnectListener = null;
         	System.gc();
         	
         	throw new ConnectionException(
@@ -177,6 +188,11 @@ public class HomeConnection extends DriverDevice {
 				}			
 			}
         } catch (HomeConnectException e) {
+        	
+        	client = null;
+        	homeconnectListener = null;
+        	System.gc();
+        	
         	throw new ConnectionException(
         			MessageFormat.format("Error reading channel! {0}", e.getMessage()));
         }

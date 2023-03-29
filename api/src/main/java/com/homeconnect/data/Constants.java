@@ -54,15 +54,15 @@ public class Constants {
     public static final String SETTINGS_FREEZER_SUPER_MODE = "Refrigeration.FridgeFreezer.Setting.SuperModeFreezer";
     public static final String SETTINGS_FRIDGE_SUPER_MODE = "Refrigeration.FridgeFreezer.Setting.SuperModeRefrigerator";
     public static final String SETTINGS_FRIDGE_ECO_MODE = "Refrigeration.Common.Setting.EcoMode";
-    public static final String EVENT_FRIDGE_MEASURED_TEMPERATURE = "Refrigeration.Common.Status.Refrigerator.MeasuredTemperature";
-    public static final String EVENT_FREEZER_MEASURED_TEMPERATURE = "Refrigeration.Common.Status.Freezer.MeasuredTemperature";
+    public static final String FRIDGE_MEASURED_TEMPERATURE = "Refrigeration.Common.Status.Refrigerator.MeasuredTemperature";
+    public static final String FREEZER_MEASURED_TEMPERATURE = "Refrigeration.Common.Status.Freezer.MeasuredTemperature";
     
     public static final String NONE = "";
-    public static final String EVENT_PROGRAM = "BSH.Common.Root.SelectedProgram";
-    public static final String EVENT_ACTIVE = "BSH.Common.Root.ActiveProgram";
+    public static final String SELECTED_PROGRAM = "BSH.Common.Root.SelectedProgram";
+    public static final String ACTIVE_PROGRAM = "BSH.Common.Root.ActiveProgram";
 
-    public static final String EVENT_OPTION_FINISH_IN_RELATIVE = "BSH.Common.Option.FinishInRelative";
-    public static final String EVENT_STATUS_OPERATION_STATE = "BSH.Common.Status.OperationState";
+    public static final String OPTION_FINISH_IN_RELATIVE = "BSH.Common.Option.FinishInRelative";
+    public static final String STATUS_OPERATION_STATE = "BSH.Common.Status.OperationState";
     public static final String OPTION_ESTIMATED_TOTAL_PROGRAM_TIME ="BSH.Common.Option.RemainingProgramTime";
     public static final String OPTION_TOTAL_PROGRAM_PROGRESS ="BSH.Common.Option.ProgramProgress";
     

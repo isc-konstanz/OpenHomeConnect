@@ -375,8 +375,6 @@ public class HomeConnectApiClient {
 			return getSetting(haId, resource.getKey());
 		case STATUS:
 			return getStatus(haId, resource.getKey());
-		case EVENT:
-			return getEvent(haId, resource, timestamp);
 	
 		default:
 			logger.warn("Wrong type configured for resource {}", resource);
@@ -403,8 +401,6 @@ public class HomeConnectApiClient {
 			break;
 		case SETTINGS:
 			putSettings(haId, new Data(resource.getKey(), data, unit), resource.getValueType());
-		case EVENT:
-			putSettings(haId, new Data(resource.getKey(), data, unit), resource.getValueType());
 		case STATUS:
 			break;
 		default:
@@ -417,7 +413,7 @@ public class HomeConnectApiClient {
     	
     	Data data = getStatus(haId, "BSH.Common.Status.OperationState");
     	
-    	if (data.getValue() == "BSH.Common.EnumType.OperationState.DelayedStart" || data.getValue() =="BSH.Common.EnumType.OperationState.Pause" || data.getValue() == "BSH.Common.EnumType.OperationState.Run") {
+    	if (data.getValue().contains("BSH.Common.EnumType.OperationState.DelayedStart") || data.getValue().contains("BSH.Common.EnumType.OperationState.Pause") || data.getValue().contains("BSH.Common.EnumType.OperationState.Run")) {
     		
     		data = getData(haId, "/api/homeappliances/" + haId + "/programs/active/options/" + option);
     	}
@@ -426,17 +422,10 @@ public class HomeConnectApiClient {
     		data = new Data("No delayed start", "0", "LONG");
     	}
     	
-		long finishTime = 0;
-				
-		if (data.getName() != "No delayed start") {
-			finishTime = data.getValueAsLong() * 1000 + System.currentTimeMillis();
-		}
-		
-		
-		return  new Data(data.getName(),String.valueOf(finishTime),data.getUnit());
+		return  new Data(data.getName(),data.getValue(),data.getUnit());
     	
     }
-    
+   
 //    /**
 //     * Get setpoint temperature of freezer
 //     *
@@ -759,7 +748,7 @@ public class HomeConnectApiClient {
             throws HomeConnectException {
         putData(haId, "/api/homeappliances/" + haId + "/settings/" + data.getName(), data, valueType);
     }
-
+/*
     private Data getEvent(String haId, Resource resource, long timestamp)
     	 throws HomeConnectException {
     	
@@ -893,14 +882,11 @@ public class HomeConnectApiClient {
  			eventsToDelete.clear();
  		}
  		
- 		if (resource.getKey() == Constants.EVENT_FRIDGE_MEASURED_TEMPERATURE || resource.getKey() == Constants.EVENT_FREEZER_MEASURED_TEMPERATURE) {
+ 		if (resource.getKey() == Constants.FRIDGE_MEASURED_TEMPERATURE || resource.getKey() == Constants.FREEZER_MEASURED_TEMPERATURE) {
  			
  			lastEventValue = String.valueOf(Double.valueOf(lastEventValue)/8);
  		
 		}
- 		if (resource.getKey() == Constants.EVENT_OPTION_FINISH_IN_RELATIVE && lastEventValue!= "0") {
- 			lastEventValue = String.valueOf(Double.valueOf(lastEventValue) * 1000 + System.currentTimeMillis());
- 		}
 		//220000 = 3,66min
 		if (60000 <= timestamp - timestampAlive && timestampAlive != 0) {
 			
@@ -914,7 +900,7 @@ public class HomeConnectApiClient {
  		return new Data(null,lastEventValue, resource.getValueTypeAsString());
  		
     }
-    
+    */
     private Data getStatus(String haId, String status)
             throws HomeConnectException {
         return getData(haId, "/api/homeappliances/" + haId + "/status/" + status);
