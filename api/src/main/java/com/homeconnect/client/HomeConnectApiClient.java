@@ -30,7 +30,6 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -57,10 +56,6 @@ import com.homeconnect.client.model.ApiRequest;
 import com.homeconnect.client.model.AvailableProgram;
 import com.homeconnect.client.model.AvailableProgramOption;
 import com.homeconnect.client.model.Data;
-import com.homeconnect.client.model.Event;
-import com.homeconnect.client.model.EventHandling;
-import com.homeconnect.client.model.EventLevel;
-import com.homeconnect.client.model.EventType;
 import com.homeconnect.client.model.HomeAppliance;
 import com.homeconnect.client.model.HomeConnectRequest;
 import com.homeconnect.client.model.HomeConnectResponse;
@@ -68,7 +63,7 @@ import com.homeconnect.client.model.Option;
 import com.homeconnect.client.model.Program;
 import com.homeconnect.data.Constants;
 import com.homeconnect.data.Resource;
-import com.homeconnect.client.model.EventType;
+
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -87,9 +82,6 @@ import okhttp3.ResponseBody;
 public class HomeConnectApiClient {
 
 	public HomeConnectEventSourceClient eventClient;
-	private Queue<Event> eventQueue = new LinkedList<Event>();
-	private Queue<Event> eventsToDelete = new LinkedList<Event>();;
-	private long timestampAlive = 0;
 	
     private static final String ACCEPT = "Accept";
     private static final String CONTENT_TYPE = "Content-Type";
@@ -374,8 +366,15 @@ public class HomeConnectApiClient {
 		case SETTINGS:
 			return getSetting(haId, resource.getKey());
 		case STATUS:
-			return getStatus(haId, resource.getKey());
-	
+			
+			if (resource.getKey().contains(Constants.FRIDGE_MEASURED_TEMPERATURE) ||resource.getKey().contains(Constants.FREEZER_MEASURED_TEMPERATURE)) {
+				Data value = getStatus(haId, resource.getKey());
+				return new Data(resource.getKey(), String.valueOf(Double.parseDouble(value.getValue())/8), resource.getValueTypeAsString());
+			}
+			else {
+				return getStatus(haId, resource.getKey());
+			}
+			
 		default:
 			logger.warn("Wrong type configured for resource {}", resource);
 			throw new UnsupportedOperationException("Wrong type configured for resource: " + resource);

@@ -78,6 +78,8 @@ public class HomeConnection extends DriverDevice {
     
     private HomeConnectListener homeconnectListener;
     
+    private ScheduledExecutorService threadService;
+    
 
     @Connect
     public void connect() throws ArgumentSyntaxException, ConnectionException {
@@ -86,7 +88,7 @@ public class HomeConnection extends DriverDevice {
             
             client =  new HomeConnectApiClient(apiUrl, username);
             
-            client.getHomeAppliance(apiUrl);
+            client.getHomeAppliances();
             
         } catch (Exception e) {
             throw new ConnectionException(e);
@@ -97,8 +99,8 @@ public class HomeConnection extends DriverDevice {
     public void registerEvents(List<HomeConnectChannel> channels, RecordsReceivedListener listener) 
     		throws ConnectionException {
     	
-    		ScheduledExecutorService threadService = Executors.newScheduledThreadPool(1);
-    	
+    		threadService = Executors.newScheduledThreadPool(0);
+    		
 			try {
 				
 				client.eventClient = new HomeConnectEventSourceClient(apiUrl, username, threadService);
@@ -114,15 +116,15 @@ public class HomeConnection extends DriverDevice {
 				if (channel.getTaskContainer().getChannel().isListening()) {
 					
 					try {
-						
+							
 						client.eventClient.registerEventListener(channel.getHomeApplianceId(), homeconnectListener);
 						
 					} catch (Exception e) {
 						
 						client = null;
 						homeconnectListener = null;
+						threadService.shutdown();
 			        	System.gc();
-						
 						throw new ConnectionException(MessageFormat.format("Unable to Register Channel with following ID: {0}", channel.getId()," ! {0}",e.getMessage()));
 						
 					}
@@ -155,8 +157,9 @@ public class HomeConnection extends DriverDevice {
 			}
         } catch(HomeConnectException e) {
         	
-        	client = null;
-        	homeconnectListener = null;
+			client = null;
+			homeconnectListener = null;
+			threadService.shutdown();
         	System.gc();
         	
         	throw new ConnectionException(
@@ -189,8 +192,9 @@ public class HomeConnection extends DriverDevice {
 			}
         } catch (HomeConnectException e) {
         	
-        	client = null;
-        	homeconnectListener = null;
+			client = null;
+			homeconnectListener = null;
+			threadService.shutdown();
         	System.gc();
         	
         	throw new ConnectionException(
