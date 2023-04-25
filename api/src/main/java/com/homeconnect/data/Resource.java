@@ -64,7 +64,7 @@ public enum Resource {
 	DISHWASHER_TIME_LEFT(Type.PROGRAM_ACTIVE_OPTIONS, Constants.OPTION_ESTIMATED_TOTAL_PROGRAM_TIME, 
 			HomeConnectApiClient.VALUE_TYPE_INT),
 	DISHWASHER_START_PROGRAM_TIME(Type.PROGRAM_ACTIVE_OPTIONS, Constants.OPTION_START_IN_RELATIVE, 
-			HomeConnectApiClient.VALUE_TYPE_LONG);
+			HomeConnectApiClient.VALUE_TYPE_INT);
 	
 
     public static enum Type {
